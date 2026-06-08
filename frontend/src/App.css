@@ -11,7 +11,7 @@
               radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
               linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Full-width layout for file management page */
