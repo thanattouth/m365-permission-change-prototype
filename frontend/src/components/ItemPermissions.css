@@ -1,28 +1,28 @@
 .permissions-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .permission-header {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
 }
 
 .permission-item-info h2 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: white;
   margin: 0 0 8px;
   word-break: break-word;
 }
 
 .item-type {
   font-size: 14px;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.8);
   margin: 0;
 }
 
@@ -30,9 +30,10 @@
 .add-permission-section {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: 10px;
+  padding: 28px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .add-permission-section h3 {
@@ -148,8 +149,9 @@
 .current-permissions-section {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .current-permissions-section h3 {
@@ -169,44 +171,66 @@
 .permissions-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .permission-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 6px;
-  gap: 12px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  gap: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.permission-item:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
 }
 
 .permission-user {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   min-width: 0;
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .user-avatar.group {
-  background: #cbd5e1;
-  color: #334155;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  color: white;
+}
+
+.user-avatar.owner {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.user-avatar.edit {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.user-avatar.view {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
 }
 
 .user-details {
@@ -233,17 +257,40 @@
 
 .role-badge {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 6px 14px;
   background: #dbeafe;
   color: #1e40af;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.role-badge.owner {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.role-badge.edit {
+  background: #fed7aa;
+  color: #92400e;
+}
+
+.role-badge.view {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .remove-btn {
   white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  transform: scale(1.05);
 }
 
 /* Loading state */

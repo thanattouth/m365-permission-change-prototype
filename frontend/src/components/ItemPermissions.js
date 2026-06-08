@@ -100,6 +100,17 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     return roleMap[role] || role;
   };
 
+  const getRoleClass = (roles) => {
+    if (!roles || roles.length === 0) return "view";
+    const role = roles[0].toLowerCase();
+    const roleMap = {
+      read: "view",
+      write: "edit",
+      owner: "owner",
+    };
+    return roleMap[role] || "view";
+  };
+
   const canRemovePermission = (permission) => {
     // Don't allow removing owner permissions (optional)
     return permission.roles && !permission.roles.includes("owner");
@@ -204,7 +215,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                 <div className="permission-user">
                   {perm.grantedTo?.user ? (
                     <>
-                      <div className="user-avatar">
+                      <div className={`user-avatar ${getRoleClass(perm.roles)}`}>
                         {perm.grantedTo.user.displayName?.charAt(0).toUpperCase() ||
                           "U"}
                       </div>
@@ -219,7 +230,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     </>
                   ) : perm.grantedTo?.group ? (
                     <>
-                      <div className="user-avatar group">G</div>
+                      <div className={`user-avatar group ${getRoleClass(perm.roles)}`}>G</div>
                       <div className="user-details">
                         <p className="user-name">
                           {perm.grantedTo.group.displayName}
@@ -237,7 +248,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   )}
                 </div>
                 <div className="permission-role">
-                  <span className="role-badge">{getRoleLabel(perm.roles)}</span>
+                  <span className={`role-badge ${getRoleClass(perm.roles)}`}>{getRoleLabel(perm.roles)}</span>
                 </div>
                 {canRemovePermission(perm) && (
                   <button
