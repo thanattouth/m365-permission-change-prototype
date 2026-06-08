@@ -13,7 +13,7 @@ function ItemsList({ instance, accounts }) {
     setIsLoading(true);
     setError(null);
     try {
-      const itemsList = await getItemsList(instance);
+      const itemsList = await getItemsList(instance, accounts[0]);
       setItems(itemsList);
     } catch (err) {
       setError(err.message || "Failed to load items");
@@ -21,7 +21,7 @@ function ItemsList({ instance, accounts }) {
     } finally {
       setIsLoading(false);
     }
-  }, [instance]);
+  }, [instance, accounts]);
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -102,6 +102,7 @@ function ItemsList({ instance, accounts }) {
           <ItemPermissions
             instance={instance}
             item={selectedItem}
+            account={accounts[0]}
             onPermissionChanged={() => {
               setSelectedItem(null);
             }}

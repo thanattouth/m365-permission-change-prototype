@@ -7,7 +7,7 @@ import {
 } from "../services/sharePointService";
 import "./ItemPermissions.css";
 
-function ItemPermissions({ instance, item, onPermissionChanged }) {
+function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [permissions, setPermissions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -21,14 +21,14 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
     setIsLoading(true);
     setError(null);
     try {
-      const perms = await getItemPermissions(instance, item.id);
+      const perms = await getItemPermissions(instance, account, item.id);
       setPermissions(perms);
     } catch (err) {
       setError(err.message || "Failed to load permissions");
     } finally {
       setIsLoading(false);
     }
-  }, [instance, item.id]);
+  }, [instance, account, item.id]);
 
   useEffect(() => {
     loadPermissions();
@@ -45,7 +45,7 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
 
     setIsSearching(true);
     try {
-      const results = await searchUsers(instance, value);
+      const results = await searchUsers(instance, account, value);
       setUserSearchResults(results);
     } catch (err) {
       console.error("Search error:", err);
@@ -59,7 +59,7 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
     setIsAddingPermission(true);
     setError(null);
     try {
-      await addItemPermission(instance, item.id, userEmail, selectedRole);
+      await addItemPermission(instance, account, item.id, userEmail, selectedRole);
       setSearchInput("");
       setUserSearchResults([]);
       await loadPermissions();
@@ -74,7 +74,7 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
     if (!window.confirm("Remove this permission?")) return;
 
     try {
-      await removeItemPermission(instance, item.id, permissionId);
+      await removeItemPermission(instance, account, item.id, permissionId);
       await loadPermissions();
     } catch (err) {
       setError(err.message || "Failed to remove permission");

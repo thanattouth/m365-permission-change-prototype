@@ -1,11 +1,26 @@
 import { sharePointConfig } from "../authConfig";
 
 /**
+ * Get access token for API calls
+ */
+export const getAccessToken = async (instance, account) => {
+  const response = await instance.acquireTokenSilent({
+    scopes: [
+      "Sites.ReadWrite.All",
+      "Files.ReadWrite.All",
+      "Directory.ReadWrite.All"
+    ],
+    account: account
+  });
+  return response.accessToken;
+};
+
+/**
  * Get SharePoint site ID from URL
  */
-export const getSiteId = async (instance) => {
+export const getSiteId = async (instance, account) => {
   try {
-    const token = await getAccessToken(instance);
+    const token = await getAccessToken(instance, account);
     const siteUrl = sharePointConfig.siteUrl;
     
     // Extract hostname and path from SharePoint URL
@@ -33,26 +48,12 @@ export const getSiteId = async (instance) => {
 };
 
 /**
- * Get access token for API calls
- */
-export const getAccessToken = async (instance) => {
-  const response = await instance.acquireTokenSilent({
-    scopes: [
-      "Sites.ReadWrite.All",
-      "Files.ReadWrite.All",
-      "Directory.ReadWrite.All"
-    ]
-  });
-  return response.accessToken;
-};
-
-/**
  * Get all items (files and folders) from root of SharePoint site
  */
-export const getItemsList = async (instance) => {
+export const getItemsList = async (instance, account) => {
   try {
-    const siteId = await getSiteId(instance);
-    const token = await getAccessToken(instance);
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
     
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,lastModifiedBy`,
@@ -76,10 +77,10 @@ export const getItemsList = async (instance) => {
 /**
  * Get permissions of a specific item
  */
-export const getItemPermissions = async (instance, itemId) => {
+export const getItemPermissions = async (instance, account, itemId) => {
   try {
-    const siteId = await getSiteId(instance);
-    const token = await getAccessToken(instance);
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
     
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=id,grantedTo,roles`,
@@ -106,10 +107,10 @@ export const getItemPermissions = async (instance, itemId) => {
  * @param {string} userEmail - User email or group email
  * @param {string} role - 'read', 'write', 'owner'
  */
-export const addItemPermission = async (instance, itemId, userEmail, role = "read") => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read") => {
   try {
-    const siteId = await getSiteId(instance);
-    const token = await getAccessToken(instance);
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
     
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`,
@@ -146,10 +147,10 @@ export const addItemPermission = async (instance, itemId, userEmail, role = "rea
  * @param {string} itemId - Item ID
  * @param {string} permissionId - Permission ID
  */
-export const removeItemPermission = async (instance, itemId, permissionId) => {
+export const removeItemPermission = async (instance, account, itemId, permissionId) => {
   try {
-    const siteId = await getSiteId(instance);
-    const token = await getAccessToken(instance);
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
     
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
@@ -173,9 +174,9 @@ export const removeItemPermission = async (instance, itemId, permissionId) => {
 /**
  * Search for users in Azure AD
  */
-export const searchUsers = async (instance, searchTerm) => {
+export const searchUsers = async (instance, account, searchTerm) => {
   try {
-    const token = await getAccessToken(instance);
+    const token = await getAccessToken(instance, account);
     
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/users?$filter=startswith(displayName,'${searchTerm}') or startswith(userPrincipalName,'${searchTerm}')&$select=id,displayName,userPrincipalName,mail`,
