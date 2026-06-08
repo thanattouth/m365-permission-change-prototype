@@ -85,14 +85,9 @@ export const applyClassificationPermissions = async (
  * For now, this is a placeholder that can be expanded later
  */
 export const getItemClassification = async (itemId) => {
-  try {
-    // TODO: Fetch classification from SharePoint item properties
-    // For now, return null - can be implemented later with custom properties
-    return null;
-  } catch (error) {
-    console.error("Error getting item classification:", error);
-    throw error;
-  }
+  // TODO: Fetch classification from SharePoint item properties
+  // For now, return null - can be implemented later with custom properties
+  return null;
 };
 
 /**
