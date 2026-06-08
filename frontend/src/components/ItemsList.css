@@ -1,78 +1,151 @@
+/* ============================================
+   Items Container & Header
+   ============================================ */
 .items-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 32px 24px;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .items-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
 }
 
 .items-header h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
   margin: 0;
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.85) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .item-count {
-  font-size: 14px;
-  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
   padding: 4px 12px;
-  background: #f1f5f9;
-  border-radius: 20px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-full);
 }
 
+.items-header .btn-secondary {
+  margin-left: auto;
+  width: auto !important;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
 .empty-state {
   text-align: center;
-  padding: 48px 24px;
-  color: #64748b;
-  font-size: 14px;
+  padding: 80px 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  backdrop-filter: blur(10px);
 }
 
+.empty-state p {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ============================================
+   Grid & Item Cards
+   ============================================ */
 .items-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
 }
 
 .item-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(255,255,255,0.06), transparent 40%);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .item-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25),
+              0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+}
+
+.item-card:hover::before {
+  opacity: 1;
 }
 
 .item-icon {
-  font-size: 32px;
-  min-width: 40px;
-  text-align: center;
+  font-size: 36px;
+  min-width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast);
+  z-index: 1;
+}
+
+.item-card:hover .item-icon {
+  transform: scale(1.05);
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 .item-info {
   flex: 1;
   min-width: 0;
+  z-index: 1;
 }
 
 .item-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,104 +156,153 @@
   display: flex;
   gap: 8px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-secondary);
+  align-items: center;
   flex-wrap: wrap;
 }
 
 .item-type {
-  padding: 2px 6px;
-  background: #f1f5f9;
-  border-radius: 4px;
-  font-weight: 500;
+  padding: 1px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 11px;
 }
 
 .item-size {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .item-date {
-  color: #94a3b8;
-  margin-left: auto;
+  color: var(--text-muted);
 }
 
 .item-modified-by {
   font-size: 11px;
-  color: #94a3b8;
-  margin: 4px 0 0;
+  color: var(--text-muted);
+  margin: 6px 0 0;
 }
 
 .item-action {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  z-index: 1;
 }
 
 .btn-sm {
-  padding: 6px 12px;
+  padding: 8px 14px;
   font-size: 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
+.item-card:hover .btn-sm {
+  background: var(--accent-gradient);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+/* ============================================
+   Permissions View Wrap
+   ============================================ */
 .permissions-view {
   max-width: 900px;
+  margin: 0 auto;
 }
 
-.back-btn {
-  margin-bottom: 16px;
-  max-width: 200px;
+.permissions-view .back-btn {
+  margin-bottom: 24px;
+  width: auto !important;
+  font-size: 13px;
+  padding: 8px 16px;
 }
 
+/* ============================================
+   States (Loading / Error)
+   ============================================ */
 .loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 48px 24px;
+  gap: 16px;
+  padding: 80px 24px;
+  color: var(--text-secondary);
 }
 
-.spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
-  border-top-color: #667eea;
-  animation: spin 0.6s linear infinite;
+.loading .spinner {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.loading p {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .error-message {
-  background: #fee2e2;
-  color: #991b1b;
-  padding: 12px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  border-left: 3px solid #dc2626;
-  margin-bottom: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
 }
 
 .close-error {
   background: none;
   border: none;
-  color: #991b1b;
-  font-size: 18px;
+  color: #fca5a5;
+  font-size: 20px;
   cursor: pointer;
   padding: 0;
-  width: 20px;
-  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: background var(--transition-fast);
 }
 
-/* Responsive */
+.close-error:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
 @media (max-width: 768px) {
+  .items-container {
+    padding: 24px 16px;
+  }
+
   .items-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .items-header h2 {
+    font-size: 22px;
+  }
+
+  .item-count {
+    align-self: flex-start;
+  }
+
+  .items-header .btn-secondary {
+    margin-left: 0;
+    width: 100% !important;
   }
 
   .items-list {
@@ -188,11 +310,31 @@
   }
 
   .item-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .item-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .item-icon {
+    align-self: flex-start;
   }
 
   .item-date {
-    margin-left: 0;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .item-action {
+    width: 100%;
+  }
+
+  .item-action .btn {
+    width: 100%;
   }
 }

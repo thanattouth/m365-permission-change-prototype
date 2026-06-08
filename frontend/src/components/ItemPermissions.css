@@ -1,46 +1,84 @@
+/* ============================================
+   Permissions Container
+   ============================================ */
 .permissions-container {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+  animation: fadeIn 0.4s ease-out;
 }
 
+/* ============================================
+   Header Card (Gradient Glow)
+   ============================================ */
 .permission-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  padding: 28px;
-  margin-bottom: 32px;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  background: var(--accent-gradient);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-bottom: 28px;
+  box-shadow: 0 12px 32px var(--accent-glow),
+              0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.permission-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 6s infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 
 .permission-item-info h2 {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 800;
   color: white;
   margin: 0 0 8px;
   word-break: break-word;
+  letter-spacing: -0.5px;
 }
 
-.item-type {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0;
-}
-
-/* Add Permission Section */
-.add-permission-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 28px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.add-permission-section h3 {
-  font-size: 16px;
+.permission-item-info .item-type {
+  font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+/* ============================================
+   Forms & Inputs (Glassmorphic)
+   ============================================ */
+.add-permission-section,
+.current-permissions-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-bottom: 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.add-permission-section h3,
+.current-permissions-section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  letter-spacing: -0.2px;
 }
 
 .search-box {
@@ -50,49 +88,64 @@
 
 .search-input {
   width: 100%;
-  padding: 10px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: all var(--transition-normal);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
 }
 
 .search-input:disabled {
-  background: #f8fafc;
-  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.01);
+  color: var(--text-muted);
 }
 
 .searching {
   position: absolute;
-  right: 12px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 12px;
-  color: #64748b;
+  font-weight: 500;
+  color: var(--accent-primary);
 }
 
+/* ============================================
+   Search Results Dropdown
+   ============================================ */
 .search-results {
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  max-height: 300px;
+  max-height: 280px;
   overflow-y: auto;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .user-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--glass-border);
+  gap: 16px;
+  transition: background var(--transition-fast);
 }
 
 .user-item:last-child {
@@ -100,252 +153,259 @@
 }
 
 .user-item:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.user-info {
+.user-item .user-info {
   flex: 1;
   min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-align: left;
 }
 
-.user-name {
-  font-size: 13px;
+.user-item .user-name {
+  font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 2px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
 }
 
-.user-email {
+.user-item .user-email {
   font-size: 12px;
-  color: #64748b;
-  margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text-secondary);
 }
 
 .user-action {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
 }
 
 .role-select {
-  padding: 6px 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
   font-family: inherit;
-  background: white;
   cursor: pointer;
+  outline: none;
+  transition: all var(--transition-fast);
 }
 
 .role-select:focus {
-  outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary);
 }
 
-/* Current Permissions Section */
-.current-permissions-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 28px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+.role-select option {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
-.current-permissions-section h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 16px;
-}
-
+/* ============================================
+   Permissions List (Modern Rows)
+   ============================================ */
 .no-permissions {
   text-align: center;
-  color: #94a3b8;
-  font-size: 13px;
-  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-sm);
 }
 
 .permissions-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .permission-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
   gap: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
 }
 
 .permission-item:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: #cbd5e1;
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .permission-user {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   flex: 1;
   min-width: 0;
 }
 
-.user-avatar {
-  width: 48px;
-  height: 48px;
+.permission-user .user-avatar {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
+  margin: 0;
+  box-shadow: none;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.user-avatar.group {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-  color: white;
+/* Color codes based on roles */
+.permission-user .user-avatar.owner {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
-.user-avatar.owner {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+.permission-user .user-avatar.edit {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-.user-avatar.edit {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-}
-
-.user-avatar.view {
+.permission-user .user-avatar.view {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-.user-details {
+.permission-user .user-avatar.group {
+  background: linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.permission-user .user-details {
   min-width: 0;
 }
 
-.user-name {
-  font-size: 13px;
+.permission-user .user-name {
+  font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0;
 }
 
-.user-email {
+.permission-user .user-email {
   font-size: 12px;
-  color: #64748b;
-  margin: 2px 0 0;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .permission-role {
   display: flex;
-  gap: 8px;
+  align-items: center;
 }
 
 .role-badge {
   display: inline-block;
-  padding: 6px 14px;
-  background: #dbeafe;
-  color: #1e40af;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
   font-weight: 700;
-  white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: all 0.2s;
 }
 
 .role-badge.owner {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .role-badge.edit {
-  background: #fed7aa;
-  color: #92400e;
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
 .role-badge.view {
-  background: #dbeafe;
-  color: #1e40af;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+/* Remove button */
 .remove-btn {
-  white-space: nowrap;
-  transition: all 0.2s;
+  width: auto !important;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
 }
 
 .remove-btn:hover {
-  transform: scale(1.05);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: #fca5a5;
+  transform: translateY(-1px);
 }
 
-/* Loading state */
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px;
-}
-
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
-  border-top-color: #667eea;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive */
+/* ============================================
+   Responsive
+   ============================================ */
 @media (max-width: 640px) {
-  .permission-header,
+  .permission-header {
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .permission-item-info h2 {
+    font-size: 22px;
+  }
+
   .add-permission-section,
   .current-permissions-section {
-    padding: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .user-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .user-action {
-    flex-direction: column;
     width: 100%;
   }
 
-  .role-select,
-  .btn {
-    width: 100%;
+  .role-select {
+    flex: 1;
+  }
+
+  .user-action .btn {
+    flex: 1;
   }
 
   .permission-item {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
   }
 
   .permission-role {
-    width: 100%;
+    align-self: flex-start;
   }
 
   .remove-btn {
-    width: 100%;
+    width: 100% !important;
   }
 }

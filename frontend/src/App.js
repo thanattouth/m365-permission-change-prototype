@@ -77,12 +77,22 @@ function MainApp() {
     setCurrentPage("profile");
   };
 
+  const isFilesPage = accounts.length > 0 && currentPage === "files";
+
   return (
-    <div className="container">
+    <div className={`container${isFilesPage ? " full-layout" : ""}`}>
+      {/* Animated background orbs */}
+      <div className="bg-decoration">
+        <div className="orb orb-1"></div>
+        <div className="orb orb-2"></div>
+        <div className="orb orb-3"></div>
+      </div>
+
       {!accounts.length ? (
         <div className="card">
           <div className="auth-section">
             <div className="header">
+              <div className="shield-icon">🛡️</div>
               <h1>M365</h1>
               <p className="subtitle">Permission Manager</p>
             </div>
@@ -159,13 +169,13 @@ function MainApp() {
                 <div className="user-details">
                   {userData.jobTitle && (
                     <div className="detail-item">
-                      <span className="label">Job Title:</span>
+                      <span className="label">Job Title</span>
                       <span className="value">{userData.jobTitle}</span>
                     </div>
                   )}
                   {userData.officeLocation && (
                     <div className="detail-item">
-                      <span className="label">Location:</span>
+                      <span className="label">Location</span>
                       <span className="value">{userData.officeLocation}</span>
                     </div>
                   )}
@@ -176,7 +186,7 @@ function MainApp() {
                     onClick={callGraph}
                     disabled={isLoadingData}
                   >
-                    {isLoadingData ? "Refreshing..." : "Refresh"}
+                    {isLoadingData ? "Refreshing..." : "↻ Refresh"}
                   </button>
                   <button 
                     className="btn btn-primary"
