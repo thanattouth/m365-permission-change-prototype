@@ -13,6 +13,12 @@
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
+.container.items-page {
+  align-items: flex-start;
+  background: white;
+  padding: 0;
+}
+
 .card {
   width: 100%;
   max-width: 480px;
@@ -256,5 +262,44 @@
   .user-info h2 {
     font-size: 20px;
   }
+}
+
+/* Items Page */
+.items-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.back-btn {
+  width: auto !important;
+  max-width: 200px;
+}
+
+.logout-btn {
+  width: auto !important;
+  margin-left: auto;
+  max-width: 120px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.action-buttons .btn {
+  width: 100%;
 }
 

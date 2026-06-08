@@ -22,6 +22,11 @@ body {
   min-height: 100vh;
 }
 
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -49,4 +54,5 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
 

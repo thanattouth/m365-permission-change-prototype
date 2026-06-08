@@ -2,6 +2,7 @@ import React from "react";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
 import { msalConfig, loginRequest } from "./authConfig";
+import ItemsList from "./components/ItemsList";
 import "./App.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -12,6 +13,7 @@ function MainApp() {
   const [userData, setUserData] = React.useState(null);
   const [isLoadingData, setIsLoadingData] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [currentPage, setCurrentPage] = React.useState("profile"); // "profile" or "files"
 
   const handleLogin = async () => {
     if (isLoggingIn) return;
@@ -32,6 +34,7 @@ function MainApp() {
     await instance.logoutPopup();
     setUserData(null);
     setError(null);
+    setCurrentPage("profile");
   };
 
   const callGraph = async () => {
@@ -64,10 +67,20 @@ function MainApp() {
     }
   };
 
+  // Navigate to items page
+  const goToFiles = () => {
+    setCurrentPage("files");
+  };
+
+  // Navigate back to profile
+  const goToProfile = () => {
+    setCurrentPage("profile");
+  };
+
   return (
     <div className="container">
-      <div className="card">
-        {!accounts.length ? (
+      {!accounts.length ? (
+        <div className="card">
           <div className="auth-section">
             <div className="header">
               <h1>M365</h1>
@@ -90,7 +103,27 @@ function MainApp() {
               )}
             </button>
           </div>
-        ) : (
+        </div>
+      ) : currentPage === "files" ? (
+        <div className="items-page">
+          <div className="page-header">
+            <button 
+              className="btn btn-outline back-btn"
+              onClick={goToProfile}
+            >
+              ← Back to Profile
+            </button>
+            <button 
+              className="btn btn-outline logout-btn"
+              onClick={handleLogout}
+            >
+              Sign Out
+            </button>
+          </div>
+          <ItemsList instance={instance} accounts={accounts} />
+        </div>
+      ) : (
+        <div className="card">
           <div className="user-section">
             <div className="header">
               <h1>Dashboard</h1>
@@ -137,13 +170,21 @@ function MainApp() {
                     </div>
                   )}
                 </div>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={callGraph}
-                  disabled={isLoadingData}
-                >
-                  {isLoadingData ? "Refreshing..." : "Refresh"}
-                </button>
+                <div className="action-buttons">
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={callGraph}
+                    disabled={isLoadingData}
+                  >
+                    {isLoadingData ? "Refreshing..." : "Refresh"}
+                  </button>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={goToFiles}
+                  >
+                    📁 Manage Permissions
+                  </button>
+                </div>
               </div>
             )}
             
@@ -154,8 +195,8 @@ function MainApp() {
               Sign Out
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
