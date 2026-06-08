@@ -9,13 +9,7 @@ function ItemsList({ instance, accounts }) {
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  useEffect(() => {
-    if (accounts.length > 0) {
-      loadItems();
-    }
-  }, [accounts]);
-
-  const loadItems = async () => {
+  const loadItems = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -27,7 +21,13 @@ function ItemsList({ instance, accounts }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [instance]);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      loadItems();
+    }
+  }, [accounts, loadItems]);
 
   const getItemIcon = (item) => {
     if (item.folder) {

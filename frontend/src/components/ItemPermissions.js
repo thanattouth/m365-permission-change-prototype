@@ -17,11 +17,7 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
   const [selectedRole, setSelectedRole] = useState("read");
   const [isAddingPermission, setIsAddingPermission] = useState(false);
 
-  useEffect(() => {
-    loadPermissions();
-  }, [item]);
-
-  const loadPermissions = async () => {
+  const loadPermissions = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -32,7 +28,11 @@ function ItemPermissions({ instance, item, onPermissionChanged }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [instance, item.id]);
+
+  useEffect(() => {
+    loadPermissions();
+  }, [item, loadPermissions]);
 
   const handleSearchUsers = async (e) => {
     const value = e.target.value;
