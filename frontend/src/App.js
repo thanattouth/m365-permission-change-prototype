@@ -18,13 +18,12 @@ function MainApp() {
     setIsLoggingIn(true);
     setError(null);
     try {
-      await instance.loginPopup(loginRequest);
+      await instance.loginRedirect(loginRequest);
     } catch (error) {
       console.error("Login error:", error);
       if (error.errorCode !== "block_nested_popups") {
         setError(error.message || "Login failed");
       }
-    } finally {
       setIsLoggingIn(false);
     }
   };
