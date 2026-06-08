@@ -1,5 +1,5 @@
 import { getClassification } from "../config/classificationConfig";
-import { addItemPermission, removeItemPermission } from "./sharePointService";
+import { addItemPermission } from "./sharePointService";
 
 /**
  * Apply classification permissions to an item
@@ -91,7 +91,7 @@ export const getItemClassification = async (itemId) => {
     return null;
   } catch (error) {
     console.error("Error getting item classification:", error);
-    return null;
+    throw error;
   }
 };
 
