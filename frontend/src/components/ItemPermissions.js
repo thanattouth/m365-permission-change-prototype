@@ -5,6 +5,7 @@ import {
   removeItemPermission,
   searchUsers,
 } from "../services/sharePointService";
+import FileClassification from "./FileClassification";
 import "./ItemPermissions.css";
 
 function ItemPermissions({ instance, item, onPermissionChanged, account }) {
@@ -16,6 +17,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedRole, setSelectedRole] = useState("read");
   const [isAddingPermission, setIsAddingPermission] = useState(false);
+  const [classification, setClassification] = useState(null);
 
   const loadPermissions = React.useCallback(async () => {
     setIsLoading(true);
@@ -81,6 +83,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     }
   };
 
+  const handleClassificationChanged = async (classificationId, result) => {
+    setClassification(classificationId);
+    // Reload permissions after classification is applied
+    await loadPermissions();
+  };
+
   const getRoleLabel = (roles) => {
     if (!roles || roles.length === 0) return "View";
     const role = roles[0].toLowerCase();
@@ -119,6 +127,15 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
           </button>
         </div>
       )}
+
+      {/* File Classification Section */}
+      <FileClassification
+        instance={instance}
+        account={account}
+        item={item}
+        currentClassification={classification}
+        onClassificationChanged={handleClassificationChanged}
+      />
 
       {/* Add Permission Section */}
       <div className="add-permission-section">
