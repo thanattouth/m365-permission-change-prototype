@@ -110,7 +110,7 @@ export const getItemPermissions = async (instance, account, itemId) => {
     const data = await response.json();
     const permissions = data.value || [];
 
-    // Attempt to fetch and merge SharePoint REST roles
+    /* Commented out Restrict Editor (Contribute) role merging temporarily
     try {
       const itemRes = await fetch(
         `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}?$select=id,webUrl,folder,file`,
@@ -210,6 +210,7 @@ export const getItemPermissions = async (instance, account, itemId) => {
     } catch (spError) {
       console.error("Error fetching or merging SharePoint REST roles:", spError);
     }
+    */
 
     return permissions;
   } catch (error) {
@@ -395,55 +396,13 @@ export const removeItemPermission = async (instance, account, itemId, permission
  * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
 export const updateItemPermission = async (instance, account, itemId, permissionId, newRole) => {
+  if (newRole === "contribute") {
+    throw new Error("Updating to Restrict Editor is not supported.");
+  }
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
-    // Fetch current permissions to check if the current role is contribute
-    const currentPermissions = await getItemPermissions(instance, account, itemId);
-    const permission = currentPermissions.find(p => p.id === permissionId);
-    
-    if (!permission) {
-      throw new Error(`Permission with ID ${permissionId} not found.`);
-    }
-
-    const isCurrentRoleContribute = permission.roles && permission.roles.includes("contribute");
-    const isNewRoleContribute = newRole === "contribute";
-
-    // If either current or new role is contribute, recreate the permission
-    if (isCurrentRoleContribute || isNewRoleContribute) {
-      const email = permission.grantedTo?.user?.email || permission.grantedTo?.user?.userPrincipalName;
-      if (!email) {
-        throw new Error("Cannot update Restrict Editor permission because the user email/UPN could not be found.");
-      }
-
-      // Fetch item details to get webUrl and isFolder
-      const itemRes = await fetch(
-        `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}?$select=id,webUrl,folder,file`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!itemRes.ok) {
-        throw new Error(`Failed to get item details for update: ${itemRes.status}`);
-      }
-      const itemData = await itemRes.json();
-      const webUrl = itemData.webUrl;
-      const isFolder = !!itemData.folder;
-
-      let itemServerRelativeUrl = null;
-      if (webUrl) {
-        const url = new URL(webUrl);
-        itemServerRelativeUrl = decodeURIComponent(url.pathname);
-      }
-
-      // Remove current permission
-      await removeItemPermission(instance, account, itemId, permissionId);
-
-      // Add new permission
-      return await addItemPermission(instance, account, itemId, email, newRole, itemServerRelativeUrl, isFolder);
-    }
-
     // Standard Graph API PATCH
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
