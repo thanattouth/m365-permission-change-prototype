@@ -65,7 +65,16 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsAddingPermission(true);
     setError(null);
     try {
-      await addItemPermission(instance, account, item.id, userEmail, selectedRole);
+      // Derive server-relative URL from item.webUrl for SharePoint REST API
+      // e.g. https://tenant.sharepoint.com/sites/DocumentManagement/Shared Documents/file.docx
+      //   -> /sites/DocumentManagement/Shared Documents/file.docx
+      let itemServerRelativeUrl = null;
+      if (item.webUrl) {
+        const url = new URL(item.webUrl);
+        itemServerRelativeUrl = decodeURIComponent(url.pathname);
+      }
+
+      await addItemPermission(instance, account, item.id, userEmail, selectedRole, itemServerRelativeUrl);
       setSearchInput("");
       setUserSearchResults([]);
       await loadPermissions();

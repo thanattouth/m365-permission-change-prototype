@@ -1,7 +1,7 @@
 import { sharePointConfig } from "../authConfig";
 
 /**
- * Get access token for API calls
+ * Get access token for Microsoft Graph API calls
  */
 export const getAccessToken = async (instance, account) => {
   const response = await instance.acquireTokenSilent({
@@ -10,6 +10,19 @@ export const getAccessToken = async (instance, account) => {
       "Files.ReadWrite.All",
       "Directory.ReadWrite.All"
     ],
+    account: account
+  });
+  return response.accessToken;
+};
+
+/**
+ * Get access token for SharePoint REST API
+ * Requires a different scope: the SharePoint site itself
+ */
+export const getSharePointToken = async (instance, account) => {
+  const siteHostname = new URL(sharePointConfig.siteUrl).hostname;
+  const response = await instance.acquireTokenSilent({
+    scopes: [`https://${siteHostname}/AllSites.FullControl`],
     account: account
   });
   return response.accessToken;
@@ -102,26 +115,101 @@ export const getItemPermissions = async (instance, account, itemId) => {
 };
 
 /**
- * Map UI role names to Microsoft Graph API role values
- * The /invite endpoint accepts: 'read', 'write'
- * SharePoint-specific roles use the 'sp.' prefix
+ * Map UI role names to Microsoft Graph API role values.
+ * NOTE: Graph API /invite only supports 'read' and 'write'.
+ * 'contribute' is handled separately via SharePoint REST API.
  */
-const mapRoleToApiRole = (role) => {
+const mapRoleToGraphRole = (role) => {
   const roleMap = {
     read: "read",
-    contribute: "sp.contribute",
     write: "write",
   };
-  return roleMap[role] || role;
+  return roleMap[role] || "read";
+};
+
+/**
+ * Add 'Contribute' (Restrict Editor) permission via SharePoint REST API
+ * This bypasses the Graph API limitation (only read/write supported)
+ *
+ * Flow:
+ *  1. Get SharePoint REST token (different scope from Graph)
+ *  2. Look up SharePoint user ID by email
+ *  3. Find the 'Contribute' role definition ID on this site
+ *  4. Break item permission inheritance (if needed) and add role assignment
+ *
+ * @param {string} itemServerRelativeUrl - e.g. /sites/DocumentManagement/Shared Documents/file.docx
+ * @param {string} userEmail
+ * @param {object} instance - MSAL instance
+ * @param {object} account - MSAL account
+ */
+export const addContributePermissionViaRestApi = async (instance, account, itemServerRelativeUrl, userEmail) => {
+  const spToken = await getSharePointToken(instance, account);
+  const siteUrl = sharePointConfig.siteUrl.replace(/\/$/, "");
+
+  const spHeaders = {
+    Authorization: `Bearer ${spToken}`,
+    Accept: "application/json;odata=verbose",
+    "Content-Type": "application/json;odata=verbose",
+  };
+
+  // Step 1: Ensure unique permissions on the item (break inheritance)
+  await fetch(
+    `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(itemServerRelativeUrl)}')/ListItemAllFields/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)`,
+    { method: "POST", headers: spHeaders }
+  );
+
+  // Step 2: Get user's SharePoint principal ID
+  const userRes = await fetch(
+    `${siteUrl}/_api/web/siteusers/getbyemail('${encodeURIComponent(userEmail)}')`,
+    { headers: spHeaders }
+  );
+  if (!userRes.ok) {
+    throw new Error(`SharePoint REST: Failed to get user by email (${userRes.status}). Make sure the user exists in SharePoint.`);
+  }
+  const userData = await userRes.json();
+  const principalId = userData.d?.Id;
+  if (!principalId) throw new Error("SharePoint REST: Could not find user principal ID");
+
+  // Step 3: Find the 'Contribute' role definition ID
+  const rolesRes = await fetch(
+    `${siteUrl}/_api/web/roledefinitions`,
+    { headers: spHeaders }
+  );
+  if (!rolesRes.ok) throw new Error(`SharePoint REST: Failed to get role definitions (${rolesRes.status})`);
+  const rolesData = await rolesRes.json();
+  const contributeRole = (rolesData.d?.results || []).find(r => r.Name === "Contribute");
+  if (!contributeRole) throw new Error("SharePoint REST: Could not find 'Contribute' role definition on this site");
+  const roleDefId = contributeRole.Id;
+
+  // Step 4: Assign the Contribute role to the user on this item
+  const assignRes = await fetch(
+    `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(itemServerRelativeUrl)}')/ListItemAllFields/roleassignments/addroleassignment(principalid=${principalId},roledefid=${roleDefId})`,
+    { method: "POST", headers: spHeaders }
+  );
+  if (!assignRes.ok) {
+    throw new Error(`SharePoint REST: Failed to assign Contribute role (${assignRes.status})`);
+  }
+
+  return { success: true, method: "SharePoint REST API", role: "Contribute", userId: principalId, roleDefId };
 };
 
 /**
  * Add permission to an item
- * @param {string} itemId - Item ID
- * @param {string} userEmail - User email or group email
- * @param {string} role - 'read', 'contribute', 'write'
+ * @param {string} itemId - Item ID (Graph)
+ * @param {string} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
+ * @param {string} userEmail - User email
+ * @param {string} role - 'read' | 'contribute' | 'write'
  */
-export const addItemPermission = async (instance, account, itemId, userEmail, role = "read") => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null) => {
+  // 'contribute' uses SharePoint REST API (Graph API does not support it)
+  if (role === "contribute") {
+    if (!itemServerRelativeUrl) {
+      throw new Error("Restrict Editor requires itemServerRelativeUrl to use SharePoint REST API");
+    }
+    return addContributePermissionViaRestApi(instance, account, itemServerRelativeUrl, userEmail);
+  }
+
+  // 'read' and 'write' use Microsoft Graph API
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
@@ -138,7 +226,7 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
           recipients: [{ email: userEmail }],
           requireSignIn: true,
           sendInvitation: true,
-          roles: [mapRoleToApiRole(role)],
+          roles: [mapRoleToGraphRole(role)],
           message: `You have been granted access to this file/folder.`
         }),
       }
@@ -187,9 +275,13 @@ export const removeItemPermission = async (instance, account, itemId, permission
 
 /**
  * Update permission role for an item
- * Updates the role for an existing permission
+ * NOTE: Graph API only supports 'read' and 'write' for PATCH.
+ * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
 export const updateItemPermission = async (instance, account, itemId, permissionId, newRole) => {
+  if (newRole === "contribute") {
+    throw new Error("Updating to Restrict Editor is not supported via Graph API. Please remove and re-add the permission.");
+  }
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
@@ -203,7 +295,7 @@ export const updateItemPermission = async (instance, account, itemId, permission
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          roles: [mapRoleToApiRole(newRole)],
+          roles: [mapRoleToGraphRole(newRole)],
         }),
       }
     );
