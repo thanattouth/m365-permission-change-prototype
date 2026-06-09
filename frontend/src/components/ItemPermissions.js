@@ -16,7 +16,9 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("read");
+  const [selectedRole, setSelectedRole] = useState("read"); // eslint-disable-line no-unused-vars
+  // Per-user role map: { [userId]: role } so each search result has its own dropdown
+  const [userRoleMap, setUserRoleMap] = useState({});
   const [isAddingPermission, setIsAddingPermission] = useState(false);
   const [classification, setClassification] = useState(null);
   const [editingPermissionId, setEditingPermissionId] = useState(null);
@@ -61,7 +63,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     }
   };
 
-  const handleAddPermission = async (userEmail) => {
+  const getUserRole = (userId) => userRoleMap[userId] || selectedRole;
+  const setUserRole = (userId, role) =>
+    setUserRoleMap((prev) => ({ ...prev, [userId]: role }));
+
+  const handleAddPermission = async (userEmail, userId) => {
+    const role = getUserRole(userId);
     setIsAddingPermission(true);
     setError(null);
     try {
@@ -74,9 +81,10 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         itemServerRelativeUrl = decodeURIComponent(url.pathname);
       }
 
-      await addItemPermission(instance, account, item.id, userEmail, selectedRole, itemServerRelativeUrl);
+      await addItemPermission(instance, account, item.id, userEmail, role, itemServerRelativeUrl);
       setSearchInput("");
       setUserSearchResults([]);
+      setUserRoleMap({});
       await loadPermissions();
     } catch (err) {
       setError(err.message || "Failed to add permission");
@@ -225,8 +233,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                 </div>
                 <div className="user-action">
                   <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
+                    value={getUserRole(user.id)}
+                    onChange={(e) => setUserRole(user.id, e.target.value)}
                     className="role-select"
                   >
                     <option value="read">Viewer</option>
@@ -236,7 +244,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={() =>
-                      handleAddPermission(user.mail || user.userPrincipalName)
+                      handleAddPermission(user.mail || user.userPrincipalName, user.id)
                     }
                     disabled={isAddingPermission}
                   >
