@@ -102,10 +102,24 @@ export const getItemPermissions = async (instance, account, itemId) => {
 };
 
 /**
+ * Map UI role names to Microsoft Graph API role values
+ * The /invite endpoint accepts: 'read', 'write'
+ * SharePoint-specific roles use the 'sp.' prefix
+ */
+const mapRoleToApiRole = (role) => {
+  const roleMap = {
+    read: "read",
+    contribute: "sp.contribute",
+    write: "write",
+  };
+  return roleMap[role] || role;
+};
+
+/**
  * Add permission to an item
  * @param {string} itemId - Item ID
  * @param {string} userEmail - User email or group email
- * @param {string} role - 'read', 'write', 'owner'
+ * @param {string} role - 'read', 'contribute', 'write'
  */
 export const addItemPermission = async (instance, account, itemId, userEmail, role = "read") => {
   try {
@@ -124,8 +138,8 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
           recipients: [{ email: userEmail }],
           requireSignIn: true,
           sendInvitation: true,
-          roles: [role],
-          message: `You have been granted ${role} access to this file/folder.`
+          roles: [mapRoleToApiRole(role)],
+          message: `You have been granted access to this file/folder.`
         }),
       }
     );
@@ -189,7 +203,7 @@ export const updateItemPermission = async (instance, account, itemId, permission
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          roles: [newRole],
+          roles: [mapRoleToApiRole(newRole)],
         }),
       }
     );
