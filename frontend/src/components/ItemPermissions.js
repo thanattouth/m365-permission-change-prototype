@@ -220,8 +220,9 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     onChange={(e) => setSelectedRole(e.target.value)}
                     className="role-select"
                   >
-                    <option value="read">View</option>
-                    <option value="write">Edit</option>
+                    <option value="read">Viewer</option>
+                    <option value="contribute">Restrict Editor</option>
+                    <option value="write">Editor</option>
                   </select>
                   <button
                     className="btn btn-primary btn-sm"
@@ -296,8 +297,9 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                       onChange={(e) => setEditingNewRole(e.target.value)}
                       className="role-select-edit"
                     >
-                      <option value="read">View</option>
-                      <option value="write">Edit</option>
+                      <option value="read">Viewer</option>
+                      <option value="contribute">Restrict Editor</option>
+                      <option value="write">Editor</option>
                     </select>
                     <button
                       className="btn btn-primary btn-sm edit-save-btn"
