@@ -108,7 +108,110 @@ export const getItemPermissions = async (instance, account, itemId) => {
     }
     
     const data = await response.json();
-    return data.value || [];
+    const permissions = data.value || [];
+
+    // Attempt to fetch and merge SharePoint REST roles
+    try {
+      const itemRes = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}?$select=id,webUrl,folder,file`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (itemRes.ok) {
+        const itemData = await itemRes.json();
+        const webUrl = itemData.webUrl;
+        const isFolder = !!itemData.folder;
+        
+        if (webUrl) {
+          const spToken = await getSharePointToken(instance, account);
+          const siteUrl = sharePointConfig.siteUrl.replace(/\/$/, "");
+          
+          const url = new URL(webUrl);
+          const itemServerRelativeUrl = decodeURIComponent(url.pathname);
+          
+          const encodedUrl = `'${encodeURIComponent(itemServerRelativeUrl)}'`;
+          const itemBaseUrl = isFolder
+            ? `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(${encodedUrl})/ListItemAllFields`
+            : `${siteUrl}/_api/web/GetFileByServerRelativeUrl(${encodedUrl})/ListItemAllFields`;
+            
+          const spRes = await fetch(
+            `${itemBaseUrl}/roleassignments?$expand=Member,RoleDefinitionBindings`,
+            {
+              headers: {
+                Authorization: `Bearer ${spToken}`,
+                Accept: "application/json;odata=verbose",
+              }
+            }
+          );
+          
+          if (spRes.ok) {
+            const spData = await spRes.json();
+            const roleAssignments = spData.d?.results || [];
+            
+            permissions.forEach(perm => {
+              const matchingAssignment = roleAssignments.find(assign => {
+                const member = assign.Member;
+                if (!member) return false;
+                
+                if (perm.grantedTo?.user) {
+                  const user = perm.grantedTo.user;
+                  const email = (user.email || "").toLowerCase();
+                  const upn = (user.userPrincipalName || "").toLowerCase();
+                  const displayName = (user.displayName || "").toLowerCase();
+                  
+                  const spEmail = (member.Email || "").toLowerCase();
+                  const spLogin = (member.LoginName || "").toLowerCase();
+                  const spTitle = (member.Title || "").toLowerCase();
+                  
+                  return (
+                    (email && spEmail === email) ||
+                    (email && spLogin.includes(email)) ||
+                    (upn && spLogin.includes(upn)) ||
+                    (displayName && spTitle === displayName)
+                  );
+                }
+                
+                if (perm.grantedTo?.group) {
+                  const group = perm.grantedTo.group;
+                  const displayName = (group.displayName || "").toLowerCase();
+                  const spTitle = (member.Title || "").toLowerCase();
+                  
+                  return displayName && spTitle === displayName;
+                }
+                
+                return false;
+              });
+              
+              if (matchingAssignment && matchingAssignment.RoleDefinitionBindings?.results) {
+                const spRoles = matchingAssignment.RoleDefinitionBindings.results.map(r => r.Name);
+                const mappedRoles = [];
+                
+                if (spRoles.includes("Full Control")) {
+                  mappedRoles.push("owner");
+                } else if (spRoles.includes("Edit")) {
+                  mappedRoles.push("write");
+                } else if (spRoles.includes("Contribute")) {
+                  mappedRoles.push("contribute");
+                } else if (spRoles.includes("Read")) {
+                  mappedRoles.push("read");
+                }
+                
+                if (mappedRoles.length > 0) {
+                  perm.roles = mappedRoles;
+                }
+              }
+            });
+          } else {
+            console.warn(`SharePoint REST role assignment fetch failed with status: ${spRes.status}`);
+          }
+        }
+      }
+    } catch (spError) {
+      console.error("Error fetching or merging SharePoint REST roles:", spError);
+    }
+
+    return permissions;
   } catch (error) {
     console.error("Error fetching permissions:", error);
     throw error;
@@ -292,13 +395,56 @@ export const removeItemPermission = async (instance, account, itemId, permission
  * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
 export const updateItemPermission = async (instance, account, itemId, permissionId, newRole) => {
-  if (newRole === "contribute") {
-    throw new Error("Updating to Restrict Editor is not supported via Graph API. Please remove and re-add the permission.");
-  }
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
+    // Fetch current permissions to check if the current role is contribute
+    const currentPermissions = await getItemPermissions(instance, account, itemId);
+    const permission = currentPermissions.find(p => p.id === permissionId);
+    
+    if (!permission) {
+      throw new Error(`Permission with ID ${permissionId} not found.`);
+    }
+
+    const isCurrentRoleContribute = permission.roles && permission.roles.includes("contribute");
+    const isNewRoleContribute = newRole === "contribute";
+
+    // If either current or new role is contribute, recreate the permission
+    if (isCurrentRoleContribute || isNewRoleContribute) {
+      const email = permission.grantedTo?.user?.email || permission.grantedTo?.user?.userPrincipalName;
+      if (!email) {
+        throw new Error("Cannot update Restrict Editor permission because the user email/UPN could not be found.");
+      }
+
+      // Fetch item details to get webUrl and isFolder
+      const itemRes = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}?$select=id,webUrl,folder,file`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!itemRes.ok) {
+        throw new Error(`Failed to get item details for update: ${itemRes.status}`);
+      }
+      const itemData = await itemRes.json();
+      const webUrl = itemData.webUrl;
+      const isFolder = !!itemData.folder;
+
+      let itemServerRelativeUrl = null;
+      if (webUrl) {
+        const url = new URL(webUrl);
+        itemServerRelativeUrl = decodeURIComponent(url.pathname);
+      }
+
+      // Remove current permission
+      await removeItemPermission(instance, account, itemId, permissionId);
+
+      // Add new permission
+      return await addItemPermission(instance, account, itemId, email, newRole, itemServerRelativeUrl, isFolder);
+    }
+
+    // Standard Graph API PATCH
     const response = await fetch(
       `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
       {
