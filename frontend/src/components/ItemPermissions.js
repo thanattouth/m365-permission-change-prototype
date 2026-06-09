@@ -3,6 +3,7 @@ import {
   getItemPermissions,
   addItemPermission,
   removeItemPermission,
+  updateItemPermission,
   searchUsers,
 } from "../services/sharePointService";
 import FileClassification from "./FileClassification";
@@ -18,6 +19,9 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [selectedRole, setSelectedRole] = useState("read");
   const [isAddingPermission, setIsAddingPermission] = useState(false);
   const [classification, setClassification] = useState(null);
+  const [editingPermissionId, setEditingPermissionId] = useState(null);
+  const [editingNewRole, setEditingNewRole] = useState(null);
+  const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
 
   const loadPermissions = React.useCallback(async () => {
     setIsLoading(true);
@@ -87,6 +91,38 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setClassification(classificationId);
     // Reload permissions after classification is applied
     await loadPermissions();
+  };
+
+  const handleEditPermission = (permissionId, currentRole) => {
+    setEditingPermissionId(permissionId);
+    setEditingNewRole(currentRole);
+  };
+
+  const handleSavePermissionEdit = async (permissionId, currentRole) => {
+    if (editingNewRole === currentRole) {
+      // No change, just cancel
+      setEditingPermissionId(null);
+      setEditingNewRole(null);
+      return;
+    }
+
+    setIsUpdatingPermission(true);
+    setError(null);
+    try {
+      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole);
+      setEditingPermissionId(null);
+      setEditingNewRole(null);
+      await loadPermissions();
+    } catch (err) {
+      setError(err.message || "Failed to update permission");
+    } finally {
+      setIsUpdatingPermission(false);
+    }
+  };
+
+  const handleCancelPermissionEdit = () => {
+    setEditingPermissionId(null);
+    setEditingNewRole(null);
   };
 
   const getRoleLabel = (roles) => {
@@ -247,16 +283,52 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     </>
                   )}
                 </div>
-                <div className="permission-role">
-                  <span className={`role-badge ${getRoleClass(perm.roles)}`}>{getRoleLabel(perm.roles)}</span>
-                </div>
-                {canRemovePermission(perm) && (
-                  <button
-                    className="btn btn-outline btn-sm remove-btn"
-                    onClick={() => handleRemovePermission(perm.id)}
-                  >
-                    Remove
-                  </button>
+                {editingPermissionId === perm.id ? (
+                  <div className="permission-actions edit-mode">
+                    <select
+                      value={editingNewRole}
+                      onChange={(e) => setEditingNewRole(e.target.value)}
+                      className="role-select-edit"
+                    >
+                      <option value="read">View</option>
+                      <option value="write">Edit</option>
+                      <option value="owner">Owner</option>
+                    </select>
+                    <button
+                      className="btn btn-primary btn-sm edit-save-btn"
+                      onClick={() => handleSavePermissionEdit(perm.id, perm.roles[0])}
+                      disabled={isUpdatingPermission}
+                    >
+                      {isUpdatingPermission ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      className="btn btn-outline btn-sm edit-cancel-btn"
+                      onClick={handleCancelPermissionEdit}
+                      disabled={isUpdatingPermission}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="permission-actions">
+                    <span className={`role-badge ${getRoleClass(perm.roles)}`}>{getRoleLabel(perm.roles)}</span>
+                    <button
+                      className="btn btn-outline btn-sm edit-btn"
+                      onClick={() => handleEditPermission(perm.id, perm.roles[0])}
+                      title="Edit permission"
+                    >
+                      Edit
+                    </button>
+                    {canRemovePermission(perm) && (
+                      <button
+                        className="btn btn-outline btn-sm remove-btn"
+                        onClick={() => handleRemovePermission(perm.id)}
+                        title="Remove permission"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ))}

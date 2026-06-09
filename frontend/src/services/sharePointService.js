@@ -172,6 +172,41 @@ export const removeItemPermission = async (instance, account, itemId, permission
 };
 
 /**
+ * Update permission role for an item
+ * Updates the role for an existing permission
+ */
+export const updateItemPermission = async (instance, account, itemId, permissionId, newRole) => {
+  try {
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
+    
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roles: [newRole],
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update permission: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error updating permission:", error);
+    throw error;
+  }
+};
+
+/**
  * Search for users in Azure AD
  */
 export const searchUsers = async (instance, account, searchTerm) => {
