@@ -454,11 +454,41 @@
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
   color: var(--danger);
-  padding: 12px 16px;
+  padding: 12px 18px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   animation: slideDown 0.3s ease-out;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  opacity: 0.6;
+  transition: all var(--transition-fast);
+}
+
+.close-error:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+  transform: scale(1.05);
 }
 
 @keyframes slideDown {

@@ -152,6 +152,11 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     return permission.roles && !permission.roles.includes("owner");
   };
 
+  const canEditPermission = (permission) => {
+    // Don't allow editing owner permissions (SharePoint sharing permissions only support read/write)
+    return permission.roles && !permission.roles.includes("owner");
+  };
+
   return (
     <div className="permissions-container">
       <div className="permission-header">
@@ -215,7 +220,6 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   >
                     <option value="read">View</option>
                     <option value="write">Edit</option>
-                    <option value="owner">Owner</option>
                   </select>
                   <button
                     className="btn btn-primary btn-sm"
@@ -292,7 +296,6 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     >
                       <option value="read">View</option>
                       <option value="write">Edit</option>
-                      <option value="owner">Owner</option>
                     </select>
                     <button
                       className="btn btn-primary btn-sm edit-save-btn"
@@ -312,13 +315,15 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                 ) : (
                   <div className="permission-actions">
                     <span className={`role-badge ${getRoleClass(perm.roles)}`}>{getRoleLabel(perm.roles)}</span>
-                    <button
-                      className="btn btn-outline btn-sm edit-btn"
-                      onClick={() => handleEditPermission(perm.id, perm.roles[0])}
-                      title="Edit permission"
-                    >
-                      Edit
-                    </button>
+                    {canEditPermission(perm) && (
+                      <button
+                        className="btn btn-outline btn-sm edit-btn"
+                        onClick={() => handleEditPermission(perm.id, perm.roles[0])}
+                        title="Edit permission"
+                      >
+                        Edit
+                      </button>
+                    )}
                     {canRemovePermission(perm) && (
                       <button
                         className="btn btn-outline btn-sm remove-btn"
