@@ -35,12 +35,14 @@ function ItemsList({ instance, accounts }) {
   const handleFolderClick = (folder) => {
     setCurrentFolderId(folder.id);
     setFolderHistory((prev) => [...prev, { id: folder.id, name: folder.name }]);
+    setActiveTab("all");
   };
 
   const handleBreadcrumbClick = (index) => {
     const newHistory = folderHistory.slice(0, index + 1);
     setFolderHistory(newHistory);
     setCurrentFolderId(newHistory[index].id);
+    setActiveTab("all");
   };
 
   const getItemIcon = (item) => {
