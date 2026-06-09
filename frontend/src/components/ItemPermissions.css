@@ -305,6 +305,17 @@
   transform: translateY(-1px);
 }
 
+.permission-actions .btn.btn-primary {
+  background: var(--accent-primary) !important;
+  color: white !important;
+  border-color: transparent !important;
+}
+
+.permission-actions .btn.btn-primary:hover {
+  background: var(--accent-primary-hover) !important;
+  color: white !important;
+}
+
 .role-select-edit {
   padding: 6px 10px;
   background: white;
