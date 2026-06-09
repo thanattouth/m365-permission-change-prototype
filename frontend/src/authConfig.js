@@ -17,7 +17,8 @@ export const loginRequest = {
     "User.Read",
     "Sites.ReadWrite.All",      // Read/Write SharePoint sites and content
     "Files.ReadWrite.All",       // Read/Write files in SharePoint
-    "Directory.ReadWrite.All"    // Manage users/groups for permissions
+    "Directory.ReadWrite.All",   // Manage users/groups for permissions
+    "https://devm365th.sharepoint.com/AllSites.FullControl" // SharePoint REST API (for Contribute role)
   ]
 };
 
@@ -26,6 +27,7 @@ export const tokenRequest = {
   scopes: [
     "Sites.ReadWrite.All",
     "Files.ReadWrite.All",
-    "Directory.ReadWrite.All"
+    "Directory.ReadWrite.All",
+    "https://devm365th.sharepoint.com/AllSites.FullControl" // SharePoint REST API (for Contribute role)
   ]
 };

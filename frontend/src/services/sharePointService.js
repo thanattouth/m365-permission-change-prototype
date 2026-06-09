@@ -16,33 +16,17 @@ export const getAccessToken = async (instance, account) => {
 };
 
 /**
- * Get access token for SharePoint REST API
- * Requires a different scope: the SharePoint site itself.
- *
- * On first use, the user must consent to this scope via an interactive popup
- * (AADSTS65001). We fall back to acquireTokenPopup automatically.
+ * Get access token for SharePoint REST API.
+ * Uses the AllSites.FullControl scope (consented at login via authConfig.js).
+ * Silent-only — no popup needed since scope is pre-consented.
  */
 export const getSharePointToken = async (instance, account) => {
   const siteHostname = new URL(sharePointConfig.siteUrl).hostname;
-  const spScopes = [`https://${siteHostname}/AllSites.FullControl`];
-
-  try {
-    // Try silent first (works after first consent)
-    const response = await instance.acquireTokenSilent({
-      scopes: spScopes,
-      account: account
-    });
-    return response.accessToken;
-  } catch (silentErr) {
-    // AADSTS65001 = user has not consented yet → show interactive popup
-    console.warn("SharePoint token silent failed, requesting consent via popup...", silentErr.message);
-    const response = await instance.acquireTokenPopup({
-      scopes: spScopes,
-      account: account,
-      prompt: "consent"
-    });
-    return response.accessToken;
-  }
+  const response = await instance.acquireTokenSilent({
+    scopes: [`https://${siteHostname}/AllSites.FullControl`],
+    account: account
+  });
+  return response.accessToken;
 };
 
 /**
