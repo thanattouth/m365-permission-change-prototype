@@ -50,13 +50,13 @@ export const getSiteId = async (instance, account) => {
 /**
  * Get all items (files and folders) from root of SharePoint site
  */
-export const getItemsList = async (instance, account) => {
+export const getItemsList = async (instance, account, folderId = "root") => {
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,lastModifiedBy`,
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${folderId}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,lastModifiedBy`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }

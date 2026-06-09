@@ -126,11 +126,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   };
 
   const getRoleLabel = (roles) => {
-    if (!roles || roles.length === 0) return "View";
+    if (!roles || roles.length === 0) return "Viewer";
     const role = roles[0].toLowerCase();
     const roleMap = {
-      read: "View",
-      write: "Edit",
+      read: "Viewer",
+      contribute: "Restrict Editor",
+      write: "Editor",
       owner: "Owner",
     };
     return roleMap[role] || role;
@@ -141,6 +142,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     const role = roles[0].toLowerCase();
     const roleMap = {
       read: "view",
+      contribute: "restrict-edit",
       write: "edit",
       owner: "owner",
     };

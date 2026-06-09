@@ -9,12 +9,14 @@ function ItemsList({ instance, accounts }) {
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentFolderId, setCurrentFolderId] = useState("root");
+  const [folderHistory, setFolderHistory] = useState([{ id: "root", name: "Root" }]);
 
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const itemsList = await getItemsList(instance, accounts[0]);
+      const itemsList = await getItemsList(instance, accounts[0], currentFolderId);
       setItems(itemsList);
     } catch (err) {
       setError(err.message || "Failed to load items");
@@ -22,13 +24,24 @@ function ItemsList({ instance, accounts }) {
     } finally {
       setIsLoading(false);
     }
-  }, [instance, accounts]);
+  }, [instance, accounts, currentFolderId]);
 
   useEffect(() => {
     if (accounts.length > 0) {
       loadItems();
     }
   }, [accounts, loadItems]);
+
+  const handleFolderClick = (folder) => {
+    setCurrentFolderId(folder.id);
+    setFolderHistory((prev) => [...prev, { id: folder.id, name: folder.name }]);
+  };
+
+  const handleBreadcrumbClick = (index) => {
+    const newHistory = folderHistory.slice(0, index + 1);
+    setFolderHistory(newHistory);
+    setCurrentFolderId(newHistory[index].id);
+  };
 
   const getItemIcon = (item) => {
     if (item.folder) {
@@ -107,7 +120,7 @@ function ItemsList({ instance, accounts }) {
             className="btn btn-outline back-btn"
             onClick={() => setSelectedItem(null)}
           >
-            ← Back to All Files
+            ← Back to Folder
           </button>
           <ItemPermissions
             instance={instance}
@@ -151,10 +164,26 @@ function ItemsList({ instance, accounts }) {
             </div>
           </div>
 
+          {/* Breadcrumbs Navigation */}
+          <div className="breadcrumbs">
+            {folderHistory.map((folder, index) => (
+              <span key={folder.id} className="breadcrumb-node">
+                {index > 0 && <span className="breadcrumb-separator">/</span>}
+                <button 
+                  className={`breadcrumb-item ${index === folderHistory.length - 1 ? "active" : ""}`}
+                  onClick={() => handleBreadcrumbClick(index)}
+                  disabled={index === folderHistory.length - 1}
+                >
+                  {folder.name === "root" || folder.name === "Root" ? "📁 Root" : folder.name}
+                </button>
+              </span>
+            ))}
+          </div>
+
           {/* Grid Layout of Items */}
           {items.length === 0 ? (
             <div className="empty-state">
-              <p>No items found in the root directory of this SharePoint site.</p>
+              <p>No items found in this directory.</p>
             </div>
           ) : (
             <div className="items-grid">
@@ -170,18 +199,26 @@ function ItemsList({ instance, accounts }) {
                     <div
                       key={item.id}
                       className={`item-card tint-${tint}`}
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => {
+                        if (item.folder) {
+                          handleFolderClick(item);
+                        } else {
+                          setSelectedItem(item);
+                        }
+                      }}
                     >
                       {/* Top badge indicators on the card */}
                       <div className="card-badge-header">
                         <div className="card-icon-badge">
                           <span className="file-icon-symbol">{getItemIcon(item)}</span>
                         </div>
-                        <div className="card-dot-badge"></div>
+                        <div className="card-type-pill">
+                          {getPillLabel(item)}
+                        </div>
                       </div>
 
                       {/* Card Content */}
-                      <h3 className="card-item-title">{item.name}</h3>
+                      <h3 className="card-item-title" title={item.name}>{item.name}</h3>
                       
                       <p className="card-item-desc">
                         {item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`}
@@ -198,9 +235,31 @@ function ItemsList({ instance, accounts }) {
                         )}
                       </div>
 
-                      {/* Bottom-right type pill badge matching the mockup */}
-                      <div className="card-type-pill">
-                        {getPillLabel(item)}
+                      {/* Card Actions Footer */}
+                      <div className="card-action-bar">
+                        {item.folder ? (
+                          <>
+                            <button 
+                              className="card-btn card-btn-primary"
+                              onClick={(e) => { e.stopPropagation(); handleFolderClick(item); }}
+                            >
+                              📂 Open
+                            </button>
+                            <button 
+                              className="card-btn card-btn-secondary"
+                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                            >
+                              🛡️ Access
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            className="card-btn card-btn-primary full-width"
+                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                          >
+                            🛡️ Manage Access
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

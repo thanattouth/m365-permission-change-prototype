@@ -249,6 +249,11 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
+.permission-user .user-avatar.restrict-edit {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
 .permission-user .user-avatar.view {
   background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -355,6 +360,12 @@
   background: rgba(249, 115, 22, 0.08);
   color: #f97316;
   border: 1px solid rgba(249, 115, 22, 0.12);
+}
+
+.role-badge.restrict-edit {
+  background: rgba(139, 92, 246, 0.08);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.12);
 }
 
 .role-badge.view {
