@@ -130,15 +130,6 @@ function MainApp() {
               <span>M365 Portal</span>
             </div>
             
-            <nav>
-              <ul className="nav-links">
-                <li className="active"><a href="#tools">Tools</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#contact">Contact</a></li>
-              </ul>
-            </nav>
-            
             <div className="nav-user-actions" ref={dropdownRef}>
               <span className="site-indicator">
                 🌐 Connected to SharePoint Site

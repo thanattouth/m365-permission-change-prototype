@@ -279,9 +279,49 @@
   white-space: nowrap;
 }
 
-.permission-role {
+.permission-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.permission-actions.edit-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.permission-actions .btn {
+  background: rgba(255, 255, 255, 0.7);
+  box-sizing: border-box;
+}
+
+.permission-actions .btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--glass-border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.role-select-edit {
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  height: 32px;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+
+.role-select-edit:focus {
+  border-color: var(--accent-primary);
 }
 
 .role-badge {
@@ -324,9 +364,9 @@
 }
 
 .remove-btn:hover {
-  background: var(--danger-bg);
-  border-color: var(--danger-border);
-  color: var(--danger);
+  background: var(--danger-bg) !important;
+  border-color: var(--danger-border) !important;
+  color: var(--danger) !important;
   transform: translateY(-1px);
 }
 
@@ -368,11 +408,19 @@
     padding: 12px 16px;
   }
 
-  .permission-role {
-    align-self: flex-start;
+  .permission-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
   }
 
-  .remove-btn {
-    width: 100% !important;
+  .permission-actions .btn,
+  .permission-actions select {
+    flex: 1;
+    min-width: 80px;
+    justify-content: center;
   }
 }
