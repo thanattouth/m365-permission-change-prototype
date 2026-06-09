@@ -1,27 +1,26 @@
 /* ============================================
-   File Classification Section
+   File Classification Wrapper Card
    ============================================ */
 .file-classification-section {
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: 32px;
-  margin-bottom: 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--glass-shadow);
 }
 
 .file-classification-section h3 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 20px;
-  letter-spacing: -0.2px;
+  margin-bottom: 16px;
 }
 
 /* ============================================
-   Selector Input
+   Select Dropdown
    ============================================ */
 .classification-selector {
   display: flex;
@@ -32,20 +31,19 @@
 
 .classification-selector label {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
 }
 
 .classification-select {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 14px;
-  font-family: inherit;
   cursor: pointer;
   outline: none;
   transition: all var(--transition-normal);
@@ -57,38 +55,32 @@
 }
 
 .classification-select:disabled {
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(255, 255, 255, 0.3);
   color: var(--text-muted);
   cursor: not-allowed;
 }
 
-.classification-select option {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
 /* ============================================
-   Classification Badge (Color-coded)
+   Classification Banner (Color-coded)
    ============================================ */
 .classification-badge {
-  padding: 20px;
+  padding: 18px 24px;
   border-radius: var(--radius-md);
   border-left: 4px solid;
   margin-bottom: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+  animation: slideDown 0.3s ease-out;
 }
 
-/* Base styles for text inside the badge since background is light color-coded */
 .badge-content {
-  color: #0f172a; /* Ensure dark, readable text on light inline background colors */
+  color: #0f172a; /* Force dark slate color for readable text on pastel badge backgrounds */
 }
 
 .badge-label {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: #0f172a;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -96,107 +88,96 @@
 .badge-description {
   font-size: 13px;
   color: #334155;
-  margin: 6px 0;
+  margin: 4px 0;
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .badge-approval {
   font-size: 12px;
   color: #991b1b;
-  font-weight: 700;
-  margin: 10px 0 0;
+  font-weight: 800;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 /* ============================================
-   States (Applying / Success / Info)
+   Alert States
    ============================================ */
 .applying-state {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 14px 20px;
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   margin-bottom: 20px;
 }
 
 .applying-state p {
   font-size: 13px;
-  font-weight: 500;
-  color: #a5b4fc;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .spinner-small {
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(99, 102, 241, 0.2);
+  border: 2px solid rgba(15, 23, 42, 0.1);
   border-radius: 50%;
   border-top-color: var(--accent-primary);
   animation: spin 0.6s linear infinite;
 }
 
-/* Success Message */
+/* Success Messages (Light Green Glass) */
 .success-message {
   background: var(--success-bg);
   border: 1px solid var(--success-border);
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 18px 24px;
   margin-bottom: 20px;
-  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideDown 0.3s ease-out;
 }
 
 .success-header {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: #86efac;
-  margin-bottom: 14px;
+  color: #065f46;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.permissions-added,
-.permissions-failed {
-  margin-bottom: 14px;
-}
-
-.permissions-added:last-child,
-.permissions-failed:last-child {
-  margin-bottom: 0;
+  gap: 6px;
 }
 
 .permissions-added h4,
 .permissions-failed h4 {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  color: #86efac;
-  margin: 0 0 8px;
+  color: #065f46;
+  margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.5px;
 }
 
 .permissions-failed h4 {
-  color: #fca5a5;
+  color: #991b1b;
 }
 
 .permissions-added ul,
 .permissions-failed ul {
   list-style: none;
-  margin: 0;
   padding: 0;
 }
 
 .permissions-added li,
 .permissions-failed li {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-  padding: 4px 0 4px 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0 4px 18px;
   position: relative;
 }
 
@@ -205,11 +186,11 @@
   position: absolute;
   left: 0;
   color: var(--success);
-  font-weight: bold;
+  font-weight: 800;
 }
 
 .permissions-failed li {
-  color: #fca5a5;
+  color: #991b1b;
 }
 
 .permissions-failed li:before {
@@ -217,17 +198,17 @@
   position: absolute;
   left: 0;
   color: var(--danger);
-  font-weight: bold;
+  font-weight: 800;
 }
 
-/* Info Text */
+/* Info Banner */
 .info-text {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 14px;
+  background: rgba(15, 23, 42, 0.02);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   display: inline-block;
 }
 
@@ -237,14 +218,5 @@
 @media (max-width: 640px) {
   .file-classification-section {
     padding: 20px;
-    margin-bottom: 20px;
-  }
-
-  .classification-select {
-    width: 100%;
-  }
-
-  .classification-badge {
-    padding: 16px;
   }
 }

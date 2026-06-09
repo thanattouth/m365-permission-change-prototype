@@ -8,6 +8,7 @@ function ItemsList({ instance, accounts }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
 
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
@@ -51,8 +52,16 @@ function ItemsList({ instance, accounts }) {
     return iconMap[ext] || "📎";
   };
 
+  const getPillLabel = (item) => {
+    if (item.folder) {
+      return "Folder";
+    }
+    const ext = item.name.split(".").pop()?.toUpperCase() || "FILE";
+    return `${ext} File`;
+  };
+
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 B";
+    if (!bytes || bytes === 0) return "0 B";
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -67,22 +76,23 @@ function ItemsList({ instance, accounts }) {
     });
   };
 
+  // Card background tint classes matching the color mockups
+  const cardTints = ["green", "blue", "purple", "yellow", "orange", "teal"];
+
   if (isLoading) {
     return (
-      <div className="items-container">
-        <div className="loading">
-          <span className="spinner"></span>
-          <p>Loading items...</p>
-        </div>
+      <div className="loading">
+        <span className="spinner"></span>
+        <p>Loading items...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="items-container">
-        <div className="error-message">{error}</div>
-        <button className="btn btn-primary" onClick={loadItems}>
+      <div className="items-error-container">
+        <div className="error-message" style={{ marginBottom: "16px" }}>{error}</div>
+        <button className="btn btn-primary" onClick={loadItems} style={{ width: "auto" }}>
           Retry
         </button>
       </div>
@@ -97,7 +107,7 @@ function ItemsList({ instance, accounts }) {
             className="btn btn-outline back-btn"
             onClick={() => setSelectedItem(null)}
           >
-            ← Back to Items
+            ← Back to All Files
           </button>
           <ItemPermissions
             instance={instance}
@@ -110,55 +120,91 @@ function ItemsList({ instance, accounts }) {
         </div>
       ) : (
         <>
-          <div className="items-header">
-            <h2>Files & Folders</h2>
-            <span className="item-count">{items.length} items</span>
-            <button className="btn btn-secondary" onClick={loadItems}>
-              🔄 Refresh
-            </button>
+          {/* Sub-Navbar containing Categories/Tabs and quick actions */}
+          <div className="portal-subbar">
+            <div className="tab-links">
+              <button 
+                className={`tab-link ${activeTab === "all" ? "active" : ""}`}
+                onClick={() => setActiveTab("all")}
+              >
+                All Files
+              </button>
+              <button 
+                className={`tab-link ${activeTab === "folders" ? "active" : ""}`}
+                onClick={() => setActiveTab("folders")}
+              >
+                Folders
+              </button>
+              <button 
+                className={`tab-link ${activeTab === "files" ? "active" : ""}`}
+                onClick={() => setActiveTab("files")}
+              >
+                Files
+              </button>
+            </div>
+            
+            <div className="subbar-actions">
+              <span className="item-count">{items.length} items</span>
+              <button className="icon-btn" onClick={loadItems} title="Refresh items list">
+                🔄
+              </button>
+            </div>
           </div>
 
+          {/* Grid Layout of Items */}
           {items.length === 0 ? (
             <div className="empty-state">
-              <p>No items found in this location</p>
+              <p>No items found in the root directory of this SharePoint site.</p>
             </div>
           ) : (
-            <div className="items-list">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="item-card"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <div className="item-icon">{getItemIcon(item)}</div>
-                  <div className="item-info">
-                    <h3 className="item-name">{item.name}</h3>
-                    <div className="item-meta">
-                      <span className="item-type">
-                        {item.folder ? "Folder" : "File"}
-                      </span>
-                      {item.size && (
-                        <span className="item-size">
-                          {formatFileSize(item.size)}
-                        </span>
-                      )}
-                      <span className="item-date">
-                        {formatDate(item.lastModifiedDateTime)}
-                      </span>
-                    </div>
-                    {item.lastModifiedBy?.user && (
-                      <p className="item-modified-by">
-                        by {item.lastModifiedBy.user.displayName}
+            <div className="items-grid">
+              {items
+                .filter(item => {
+                  if (activeTab === "folders") return item.folder;
+                  if (activeTab === "files") return !item.folder;
+                  return true;
+                })
+                .map((item, index) => {
+                  const tint = cardTints[index % cardTints.length];
+                  return (
+                    <div
+                      key={item.id}
+                      className={`item-card tint-${tint}`}
+                      onClick={() => setSelectedItem(item)}
+                    >
+                      {/* Top badge indicators on the card */}
+                      <div className="card-badge-header">
+                        <div className="card-icon-badge">
+                          <span className="file-icon-symbol">{getItemIcon(item)}</span>
+                        </div>
+                        <div className="card-dot-badge"></div>
+                      </div>
+
+                      {/* Card Content */}
+                      <h3 className="card-item-title">{item.name}</h3>
+                      
+                      <p className="card-item-desc">
+                        {item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`}
                       </p>
-                    )}
-                  </div>
-                  <div className="item-action">
-                    <button className="btn btn-primary btn-sm">
-                      Manage Permissions
-                    </button>
-                  </div>
-                </div>
-              ))}
+
+                      <div className="card-meta-row">
+                        <span className="card-date-modified">
+                          Modified {formatDate(item.lastModifiedDateTime)}
+                        </span>
+                        {item.lastModifiedBy?.user && (
+                          <span className="card-modified-by" title={item.lastModifiedBy.user.displayName}>
+                            by {item.lastModifiedBy.user.displayName.split(" ")[0]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Bottom-right type pill badge matching the mockup */}
+                      <div className="card-type-pill">
+                        {getPillLabel(item)}
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </>

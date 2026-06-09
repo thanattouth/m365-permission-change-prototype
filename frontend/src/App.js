@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
 import { msalConfig, loginRequest } from "./authConfig";
@@ -9,11 +9,61 @@ const msalInstance = new PublicClientApplication(msalConfig);
 
 function MainApp() {
   const { instance, accounts } = useMsal();
-  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
-  const [userData, setUserData] = React.useState(null);
-  const [isLoadingData, setIsLoadingData] = React.useState(false);
-  const [error, setError] = React.useState(null);
-  const [currentPage, setCurrentPage] = React.useState("profile"); // "profile" or "files"
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [error, setError] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Auto-fetch profile once logged in
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (accounts.length > 0 && !userData && !isLoadingProfile) {
+        setIsLoadingProfile(true);
+        setError(null);
+        try {
+          const response = await instance.acquireTokenSilent({
+            ...loginRequest,
+            account: accounts[0],
+          });
+
+          const res = await fetch("https://graph.microsoft.com/v1.0/me", {
+            headers: {
+              Authorization: `Bearer ${response.accessToken}`,
+            },
+          });
+
+          if (!res.ok) {
+            throw new Error(`API returned ${res.status}`);
+          }
+
+          const data = await res.json();
+          setUserData(data);
+        } catch (err) {
+          console.error("Microsoft Graph profile error:", err);
+          setError(err.message || "Failed to load profile details in background");
+        } finally {
+          setIsLoadingProfile(false);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [accounts, userData, instance, isLoadingProfile]);
+
+  // Click outside listener to close the profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleLogin = async () => {
     if (isLoggingIn) return;
@@ -21,10 +71,10 @@ function MainApp() {
     setError(null);
     try {
       await instance.loginRedirect(loginRequest);
-    } catch (error) {
-      console.error("Login error:", error);
-      if (error.errorCode !== "block_nested_popups") {
-        setError(error.message || "Login failed");
+    } catch (err) {
+      console.error("Login error:", err);
+      if (err.errorCode !== "block_nested_popups") {
+        setError(err.message || "Login failed");
       }
       setIsLoggingIn(false);
     }
@@ -34,70 +84,25 @@ function MainApp() {
     await instance.logoutPopup();
     setUserData(null);
     setError(null);
-    setCurrentPage("profile");
+    setShowDropdown(false);
   };
 
-  const callGraph = async () => {
-    if (isLoadingData) return;
-    setIsLoadingData(true);
-    setError(null);
-    try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account: accounts[0],
-      });
-
-      const res = await fetch("https://graph.microsoft.com/v1.0/me", {
-        headers: {
-          Authorization: `Bearer ${response.accessToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`API returned ${res.status}`);
-      }
-
-      const data = await res.json();
-      setUserData(data);
-    } catch (error) {
-      console.error("Graph API error:", error);
-      setError(error.message || "Failed to fetch user data");
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
-  // Navigate to items page
-  const goToFiles = () => {
-    setCurrentPage("files");
-  };
-
-  // Navigate back to profile
-  const goToProfile = () => {
-    setCurrentPage("profile");
-  };
-
-  const isFilesPage = accounts.length > 0 && currentPage === "files";
+  const isLoggedIn = accounts.length > 0;
 
   return (
-    <div className={`container${isFilesPage ? " full-layout" : ""}`}>
-      {/* Animated background orbs */}
-      <div className="bg-decoration">
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-        <div className="orb orb-3"></div>
-      </div>
-
-      {!accounts.length ? (
+    <div className={`container ${isLoggedIn ? "full-layout" : ""}`}>
+      {!isLoggedIn ? (
         <div className="card">
           <div className="auth-section">
-            <div className="header">
-              <div className="shield-icon">🛡️</div>
+            <div className="header" style={{ textAlign: "center" }}>
+              <span className="shield-icon">🛡️</span>
               <h1>M365</h1>
               <p className="subtitle">Permission Manager</p>
             </div>
-            <p className="description">Sign in to manage your Microsoft 365 permissions securely.</p>
-            {error && <div className="error-message">{error}</div>}
+            <p className="description" style={{ textAlign: "center", marginBottom: "24px" }}>
+              Sign in to manage your Microsoft 365 SharePoint permissions and classification levels securely.
+            </p>
+            {error && <div className="error-message" style={{ marginBottom: "16px" }}>{error}</div>}
             <button 
               className="btn btn-primary" 
               onClick={handleLogin} 
@@ -114,97 +119,87 @@ function MainApp() {
             </button>
           </div>
         </div>
-      ) : currentPage === "files" ? (
-        <div className="items-page">
-          <div className="page-header">
-            <button 
-              className="btn btn-outline back-btn"
-              onClick={goToProfile}
-            >
-              ← Back to Profile
-            </button>
-            <button 
-              className="btn btn-outline logout-btn"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </button>
-          </div>
-          <ItemsList instance={instance} accounts={accounts} />
-        </div>
       ) : (
-        <div className="card">
-          <div className="user-section">
-            <div className="header">
-              <h1>Dashboard</h1>
-              <p className="subtitle">Welcome back</p>
+        /* Large Portal Shell Container matching the mockup layout */
+        <div className="portal-shell">
+          
+          {/* Main Top Header Navbar */}
+          <header className="portal-navbar">
+            <div className="brand-section">
+              <span className="brand-logo">🛠️</span>
+              <span>M365 Portal</span>
             </div>
             
-            {!userData ? (
-              <>
-                <p className="description">Load your profile information</p>
-                {error && <div className="error-message">{error}</div>}
-                <button 
-                  className="btn btn-primary" 
-                  onClick={callGraph}
-                  disabled={isLoadingData}
-                >
-                  {isLoadingData ? (
-                    <>
-                      <span className="spinner"></span>
-                      Loading...
-                    </>
-                  ) : (
-                    "Load Profile"
-                  )}
-                </button>
-              </>
-            ) : (
-              <div className="user-info">
-                <div className="user-avatar">
-                  {userData.displayName?.charAt(0).toUpperCase() || "U"}
-                </div>
-                <h2>{userData.displayName}</h2>
-                <p className="email">{userData.mail || userData.userPrincipalName}</p>
-                <div className="user-details">
-                  {userData.jobTitle && (
-                    <div className="detail-item">
-                      <span className="label">Job Title</span>
-                      <span className="value">{userData.jobTitle}</span>
-                    </div>
-                  )}
-                  {userData.officeLocation && (
-                    <div className="detail-item">
-                      <span className="label">Location</span>
-                      <span className="value">{userData.officeLocation}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="action-buttons">
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={callGraph}
-                    disabled={isLoadingData}
-                  >
-                    {isLoadingData ? "Refreshing..." : "↻ Refresh"}
-                  </button>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={goToFiles}
-                  >
-                    📁 Manage Permissions
-                  </button>
-                </div>
-              </div>
-            )}
+            <nav>
+              <ul className="nav-links">
+                <li className="active"><a href="#tools">Tools</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#contact">Contact</a></li>
+              </ul>
+            </nav>
             
-            <button 
-              className="btn btn-outline"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </button>
-          </div>
+            <div className="nav-user-actions" ref={dropdownRef}>
+              <span className="site-indicator">
+                🌐 Connected to SharePoint Site
+              </span>
+              
+              <button 
+                className="avatar-btn" 
+                onClick={() => setShowDropdown(!showDropdown)}
+                title={userData ? userData.displayName : "Profile Info"}
+              >
+                {userData && userData.displayName 
+                  ? userData.displayName.charAt(0).toUpperCase() 
+                  : (accounts[0].name ? accounts[0].name.charAt(0).toUpperCase() : "U")}
+              </button>
+              
+              {/* Profile details dropdown */}
+              {showDropdown && (
+                <div className="profile-dropdown">
+                  <div className="dropdown-user-info">
+                    <p className="dropdown-user-name">
+                      {userData ? userData.displayName : accounts[0].name || "User"}
+                    </p>
+                    <p className="dropdown-user-email">
+                      {userData ? userData.mail || userData.userPrincipalName : accounts[0].username}
+                    </p>
+                  </div>
+                  
+                  {userData && (userData.jobTitle || userData.officeLocation) && (
+                    <div className="dropdown-details">
+                      {userData.jobTitle && (
+                        <div className="dropdown-detail-item">
+                          <span className="label">Job Title</span>
+                          <span className="value">{userData.jobTitle}</span>
+                        </div>
+                      )}
+                      {userData.officeLocation && (
+                        <div className="dropdown-detail-item">
+                          <span className="label">Location</span>
+                          <span className="value">{userData.officeLocation}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={handleLogout}
+                    style={{ width: "100%", marginTop: "4px" }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* Main Items Listing Page Content */}
+          <main className="portal-content">
+            <ItemsList instance={instance} accounts={accounts} />
+          </main>
+          
         </div>
       )}
     </div>

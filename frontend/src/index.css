@@ -1,55 +1,65 @@
 /* ============================================
-   Design System - CSS Custom Properties
+   Design System - Light Glassmorphic System
    ============================================ */
 :root {
-  /* Background */
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1a1f33;
+  /* Background Canvas */
+  --bg-primary: #f1f5f9;
+  --bg-gradient: radial-gradient(circle at 15% 20%, rgba(217, 240, 230, 0.8) 0%, transparent 45%),
+                 radial-gradient(circle at 85% 15%, rgba(224, 218, 245, 0.8) 0%, transparent 45%),
+                 radial-gradient(circle at 50% 85%, rgba(254, 243, 199, 0.7) 0%, transparent 50%),
+                 #f8fafc;
 
-  /* Glass */
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-bg-hover: rgba(255, 255, 255, 0.07);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.35);
+  --glass-bg-hover: rgba(255, 255, 255, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-border-hover: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
+  --glass-shadow-hover: 0 16px 48px 0 rgba(15, 23, 42, 0.08);
 
-  /* Accent */
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --accent-glow: rgba(99, 102, 241, 0.3);
-  --accent-glow-strong: rgba(99, 102, 241, 0.5);
+  /* Primary Branding (Mockup Accent) */
+  --accent-primary: #0f172a; /* Sleek black buttons from mockup */
+  --accent-primary-hover: #1e293b;
+  --accent-gradient: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  --accent-glow: rgba(15, 23, 42, 0.1);
 
-  /* Text */
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  --text-muted: rgba(255, 255, 255, 0.4);
+  /* Brand Tints for Cards (Mockup styling) */
+  --tint-green: linear-gradient(135deg, rgba(216, 241, 230, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --tint-blue: linear-gradient(135deg, rgba(219, 234, 254, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --tint-purple: linear-gradient(135deg, rgba(243, 232, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --tint-yellow: linear-gradient(135deg, rgba(254, 243, 199, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --tint-orange: linear-gradient(135deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --tint-teal: linear-gradient(135deg, rgba(204, 251, 241, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
 
-  /* Danger */
+  /* Typography */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  /* Alerts */
   --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --danger-border: rgba(239, 68, 68, 0.2);
+  --danger-bg: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.15);
 
-  /* Success */
-  --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.1);
-  --success-border: rgba(34, 197, 94, 0.2);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.08);
+  --success-border: rgba(16, 185, 129, 0.15);
 
   /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
   --radius-full: 9999px;
 
-  /* Transitions */
+  /* Animations */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================
-   Reset & Base
+   Reset & Base Styles
    ============================================ */
 *,
 *::before,
@@ -67,14 +77,15 @@ body,
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 #root {
@@ -83,24 +94,19 @@ body {
 }
 
 code {
-  font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-button {
+button, input, select {
   font-family: inherit;
 }
 
-a {
-  color: var(--accent-primary);
-  text-decoration: none;
-}
-
 /* ============================================
-   Scrollbar Styling (Dark Theme)
+   Scrollbars
    ============================================ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -108,24 +114,10 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
+  background: rgba(15, 23, 42, 0.15);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-}
-
-/* ============================================
-   Selection
-   ============================================ */
-::selection {
-  background: rgba(99, 102, 241, 0.3);
-  color: #fff;
+  background: rgba(15, 23, 42, 0.25);
 }
