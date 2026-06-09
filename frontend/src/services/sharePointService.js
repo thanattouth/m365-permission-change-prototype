@@ -140,10 +140,11 @@ const mapRoleToGraphRole = (role) => {
  *
  * @param {string} itemServerRelativeUrl - e.g. /sites/DocumentManagement/Shared Documents/file.docx
  * @param {string} userEmail
+ * @param {boolean} isFolder - true if item is a folder, false if file
  * @param {object} instance - MSAL instance
  * @param {object} account - MSAL account
  */
-export const addContributePermissionViaRestApi = async (instance, account, itemServerRelativeUrl, userEmail) => {
+export const addContributePermissionViaRestApi = async (instance, account, itemServerRelativeUrl, userEmail, isFolder = false) => {
   const spToken = await getSharePointToken(instance, account);
   const siteUrl = sharePointConfig.siteUrl.replace(/\/$/, "");
 
@@ -153,11 +154,21 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
     "Content-Type": "application/json;odata=verbose",
   };
 
+  // Choose correct SharePoint REST endpoint based on item type
+  // Files: GetFileByServerRelativeUrl | Folders: GetFolderByServerRelativeUrl
+  const encodedUrl = `'${encodeURIComponent(itemServerRelativeUrl)}'`;
+  const itemBaseUrl = isFolder
+    ? `${siteUrl}/_api/web/GetFolderByServerRelativeUrl(${encodedUrl})/ListItemAllFields`
+    : `${siteUrl}/_api/web/GetFileByServerRelativeUrl(${encodedUrl})/ListItemAllFields`;
+
   // Step 1: Ensure unique permissions on the item (break inheritance)
-  await fetch(
-    `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(itemServerRelativeUrl)}')/ListItemAllFields/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)`,
+  const breakRes = await fetch(
+    `${itemBaseUrl}/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)`,
     { method: "POST", headers: spHeaders }
   );
+  if (!breakRes.ok) {
+    throw new Error(`SharePoint REST: Failed to break permission inheritance (${breakRes.status}). Item may not exist at: ${itemServerRelativeUrl}`);
+  }
 
   // Step 2: Get user's SharePoint principal ID
   const userRes = await fetch(
@@ -184,7 +195,7 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
 
   // Step 4: Assign the Contribute role to the user on this item
   const assignRes = await fetch(
-    `${siteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(itemServerRelativeUrl)}')/ListItemAllFields/roleassignments/addroleassignment(principalid=${principalId},roledefid=${roleDefId})`,
+    `${itemBaseUrl}/roleassignments/addroleassignment(principalid=${principalId},roledefid=${roleDefId})`,
     { method: "POST", headers: spHeaders }
   );
   if (!assignRes.ok) {
@@ -197,17 +208,18 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
 /**
  * Add permission to an item
  * @param {string} itemId - Item ID (Graph)
- * @param {string} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
  * @param {string} userEmail - User email
  * @param {string} role - 'read' | 'contribute' | 'write'
+ * @param {string|null} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
+ * @param {boolean} isFolder - true if item is a folder (affects SharePoint REST endpoint)
  */
-export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null) => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false) => {
   // 'contribute' uses SharePoint REST API (Graph API does not support it)
   if (role === "contribute") {
     if (!itemServerRelativeUrl) {
       throw new Error("Restrict Editor requires itemServerRelativeUrl to use SharePoint REST API");
     }
-    return addContributePermissionViaRestApi(instance, account, itemServerRelativeUrl, userEmail);
+    return addContributePermissionViaRestApi(instance, account, itemServerRelativeUrl, userEmail, isFolder);
   }
 
   // 'read' and 'write' use Microsoft Graph API

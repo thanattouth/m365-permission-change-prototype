@@ -81,7 +81,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         itemServerRelativeUrl = decodeURIComponent(url.pathname);
       }
 
-      await addItemPermission(instance, account, item.id, userEmail, role, itemServerRelativeUrl);
+      await addItemPermission(instance, account, item.id, userEmail, role, itemServerRelativeUrl, !!item.folder);
       setSearchInput("");
       setUserSearchResults([]);
       setUserRoleMap({});
