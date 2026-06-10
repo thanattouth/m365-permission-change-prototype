@@ -61,7 +61,42 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.add-permission-section h3 {
   margin-bottom: 16px;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.section-kicker {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.access-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ============================================
@@ -287,7 +322,7 @@
 .permission-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -342,12 +377,62 @@
 
 .role-badge {
   display: inline-block;
-  padding: 3px 10px;
+  padding: 5px 11px;
   border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+}
+
+.permission-action-btn {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-primary);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.permission-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(15, 23, 42, 0.08);
+}
+
+.permission-action-btn:focus-visible {
+  outline: 3px solid var(--accent-glow);
+  outline-offset: 2px;
+}
+
+.edit-action {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.86));
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+.edit-action:hover {
+  border-color: rgba(15, 23, 42, 0.28);
+  background: white;
+}
+
+.remove-action {
+  background: rgba(254, 242, 242, 0.9);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #b91c1c;
+}
+
+.remove-action:hover {
+  background: #fff1f2;
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #991b1b;
 }
 
 .role-badge.owner {
@@ -439,8 +524,19 @@
     margin-top: 4px;
   }
 
+  .section-heading-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .access-count {
+    width: fit-content;
+  }
+
   .permission-actions .btn,
-  .permission-actions select {
+  .permission-actions select,
+  .permission-action-btn {
     flex: 1;
     min-width: 80px;
     justify-content: center;

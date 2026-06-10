@@ -9,7 +9,7 @@ export const CLASSIFICATIONS = {
     label: "Internal (DGCS)",
     color: "#FFD700",
     bgColor: "#FFFACD",
-    description: "กรรมการบริหารเท่านั้น",
+    description: "Executive committee access only",
     owner: "DGCS",
     permissions: {
       owner: ["owner"],
@@ -27,7 +27,7 @@ export const CLASSIFICATIONS = {
     label: "Confidential - Custom (DGVP)",
     color: "#FF8C00",
     bgColor: "#FFE4B5",
-    description: "ต้องได้รับอนุมัติจาก VP ขึ้นไป",
+    description: "Requires approval from VP level or above",
     owner: "DGVP",
     permissions: {
       owner: ["owner"],
@@ -47,7 +47,7 @@ export const CLASSIFICATIONS = {
     label: "Secret - Custom (EVPN)",
     color: "#FF0000",
     bgColor: "#FFB6C6",
-    description: "ต้องได้รับอนุมัติจาก EVP ขึ้นไป",
+    description: "Requires approval from EVP level or above",
     owner: "EVPN",
     permissions: {
       owner: ["owner"],

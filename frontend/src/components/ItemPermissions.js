@@ -269,7 +269,17 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
       </div>
 
       <div className="current-permissions-section">
-        <h3>Current Access</h3>
+        <div className="section-heading-row">
+          <div>
+            <h3>Current Access</h3>
+            <p className="section-kicker">Active sharing entries</p>
+          </div>
+          {!isLoading && (
+            <span className="access-count">
+              {permissions.length} {permissions.length === 1 ? "entry" : "entries"}
+            </span>
+          )}
+        </div>
         {isLoading ? (
           <div className="loading"><span className="spinner"></span><p>Loading permissions...</p></div>
         ) : permissions.length === 0 ? (
@@ -333,16 +343,18 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     {!perm.roles?.includes("owner") && (
                       <>
                         <button
-                          className="btn btn-outline btn-sm"
+                          className="permission-action-btn edit-action"
                           onClick={() => { setEditingPermissionId(perm.id); setEditingNewRole(perm.roles[0]); }}
+                          title="Edit role"
                         >
-                          Edit
+                          Edit role
                         </button>
                         <button
-                          className="btn btn-outline btn-sm"
+                          className="permission-action-btn remove-action"
                           onClick={() => handleRemovePermission(perm.id)}
+                          title="Remove access"
                         >
-                          Remove
+                          Remove access
                         </button>
                       </>
                     )}

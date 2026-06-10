@@ -100,7 +100,7 @@ function MainApp() {
               <p className="subtitle">Permission Manager</p>
             </div>
             <p className="description" style={{ textAlign: "center", marginBottom: "24px" }}>
-              Sign in to manage your Microsoft 365 SharePoint permissions and classification levels securely.
+              Sign in to manage Microsoft 365 SharePoint access across site contents, folders, and files.
             </p>
             {error && <div className="error-message" style={{ marginBottom: "16px" }}>{error}</div>}
             <button 

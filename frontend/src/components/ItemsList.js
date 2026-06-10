@@ -119,7 +119,7 @@ function ItemsList({ instance, accounts }) {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("th-TH", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric", month: "short", day: "numeric",
     });
   };
@@ -154,7 +154,7 @@ function ItemsList({ instance, accounts }) {
             className="btn btn-outline back-btn"
             onClick={() => setSelectedItem(null)}
           >
-            ← Back to {navLevel === "site" ? "Site" : "Folder"}
+            Back to {navLevel === "site" ? "site contents" : "folder"}
           </button>
           <ItemPermissions
             instance={instance}

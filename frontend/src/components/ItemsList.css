@@ -284,10 +284,21 @@
 
 .permissions-view .back-btn {
   margin-bottom: 20px;
-  padding: 8px 16px;
+  padding: 9px 18px;
   font-size: 13px;
   border-radius: var(--radius-sm);
   width: auto !important;
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: var(--text-primary);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  text-transform: none;
+}
+
+.permissions-view .back-btn:hover:not(:disabled) {
+  background: white;
+  border-color: rgba(15, 23, 42, 0.2);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 /* ============================================

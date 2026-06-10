@@ -71,7 +71,7 @@
   font-weight: 800;
   font-size: 18px;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 
 .brand-logo {
@@ -342,7 +342,7 @@
   font-size: 32px;
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -1px;
+  letter-spacing: 0;
 }
 
 .subtitle {
@@ -377,7 +377,7 @@
   justify-content: center;
   gap: 8px;
   width: 100%;
-  letter-spacing: -0.1px;
+  letter-spacing: 0;
 }
 
 .btn-sm {

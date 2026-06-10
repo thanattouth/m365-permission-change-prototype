@@ -32,6 +32,7 @@
   --tint-teal: linear-gradient(135deg, rgba(204, 251, 241, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
 
   /* Typography */
+  --font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #64748b;
@@ -77,7 +78,7 @@ body,
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-gradient);
