@@ -48,7 +48,8 @@ function FileClassification({
         instance,
         account,
         item.id,
-        newClassificationId
+        newClassificationId,
+        !!item.isLibrary
       );
 
       setApplyResult({

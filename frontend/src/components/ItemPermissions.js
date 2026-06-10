@@ -6,7 +6,10 @@ import {
   updateItemPermission,
   searchUsers,
 } from "../services/sharePointService";
-import FileClassification from "./FileClassification";
+// File Classification is parked for this prototype phase.
+// The current customer use case only needs admin-driven permission management
+// across site contents, folders, and files.
+// import FileClassification from "./FileClassification";
 import "./ItemPermissions.css";
 
 function ItemPermissions({ instance, item, onPermissionChanged, account }) {
@@ -16,11 +19,9 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("read"); // eslint-disable-line no-unused-vars
-  // Per-user role map: { [userId]: role } so each search result has its own dropdown
   const [userRoleMap, setUserRoleMap] = useState({});
   const [isAddingPermission, setIsAddingPermission] = useState(false);
-  const [classification, setClassification] = useState(null);
+  // const [classification, setClassification] = useState(null);
   const [editingPermissionId, setEditingPermissionId] = useState(null);
   const [editingNewRole, setEditingNewRole] = useState(null);
   const [isUpdatingPermission, setIsUpdatingPermission] = useState(false);
@@ -29,14 +30,14 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsLoading(true);
     setError(null);
     try {
-      const perms = await getItemPermissions(instance, account, item.id);
+      const perms = await getItemPermissions(instance, account, item.id, !!item.isLibrary);
       setPermissions(perms);
     } catch (err) {
       setError(err.message || "Failed to load permissions");
     } finally {
       setIsLoading(false);
     }
-  }, [instance, account, item.id]);
+  }, [instance, account, item.id, item.isLibrary]);
 
   useEffect(() => {
     loadPermissions();
@@ -63,7 +64,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     }
   };
 
-  const getUserRole = (userId) => userRoleMap[userId] || selectedRole;
+  const getUserRole = (userId) => userRoleMap[userId] || "read";
   const setUserRole = (userId, role) =>
     setUserRoleMap((prev) => ({ ...prev, [userId]: role }));
 
@@ -72,16 +73,26 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsAddingPermission(true);
     setError(null);
     try {
-      // Derive server-relative URL from item.webUrl for SharePoint REST API
-      // e.g. https://tenant.sharepoint.com/sites/DocumentManagement/Shared Documents/file.docx
-      //   -> /sites/DocumentManagement/Shared Documents/file.docx
       let itemServerRelativeUrl = null;
       if (item.webUrl) {
-        const url = new URL(item.webUrl);
-        itemServerRelativeUrl = decodeURIComponent(url.pathname);
+        try {
+          const url = new URL(item.webUrl);
+          itemServerRelativeUrl = decodeURIComponent(url.pathname);
+        } catch (e) {
+          console.warn("Could not parse webUrl for relative path", e);
+        }
       }
 
-      await addItemPermission(instance, account, item.id, userEmail, role, itemServerRelativeUrl, !!item.folder);
+      await addItemPermission(
+        instance, 
+        account, 
+        item.id, 
+        userEmail, 
+        role, 
+        itemServerRelativeUrl, 
+        !!item.folder, 
+        !!item.isLibrary
+      );
       setSearchInput("");
       setUserSearchResults([]);
       setUserRoleMap({});
@@ -97,27 +108,15 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     if (!window.confirm("Remove this permission?")) return;
 
     try {
-      await removeItemPermission(instance, account, item.id, permissionId);
+      await removeItemPermission(instance, account, item.id, permissionId, !!item.isLibrary);
       await loadPermissions();
     } catch (err) {
       setError(err.message || "Failed to remove permission");
     }
   };
 
-  const handleClassificationChanged = async (classificationId, result) => {
-    setClassification(classificationId);
-    // Reload permissions after classification is applied
-    await loadPermissions();
-  };
-
-  const handleEditPermission = (permissionId, currentRole) => {
-    setEditingPermissionId(permissionId);
-    setEditingNewRole(currentRole);
-  };
-
   const handleSavePermissionEdit = async (permissionId, currentRole) => {
     if (editingNewRole === currentRole) {
-      // No change, just cancel
       setEditingPermissionId(null);
       setEditingNewRole(null);
       return;
@@ -126,7 +125,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsUpdatingPermission(true);
     setError(null);
     try {
-      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole);
+      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole, !!item.isLibrary);
       setEditingPermissionId(null);
       setEditingNewRole(null);
       await loadPermissions();
@@ -135,11 +134,6 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     } finally {
       setIsUpdatingPermission(false);
     }
-  };
-
-  const handleCancelPermissionEdit = () => {
-    setEditingPermissionId(null);
-    setEditingNewRole(null);
   };
 
   const getRoleLabel = (roles) => {
@@ -166,15 +160,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     return roleMap[role] || "view";
   };
 
-  const canRemovePermission = (permission) => {
-    // Don't allow removing owner permissions (optional)
-    return permission.roles && !permission.roles.includes("owner");
-  };
-
-  const canEditPermission = (permission) => {
-    // Don't allow editing owner permissions (SharePoint sharing permissions only support read/write)
-    return permission.roles && !permission.roles.includes("owner");
-  };
+  // Helper for External Email
+  const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchInput);
 
   return (
     <div className="permissions-container">
@@ -182,7 +169,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         <div className="permission-item-info">
           <h2>{item.name}</h2>
           <p className="item-type">
-            {item.folder ? "📁 Folder" : "📄 File"}
+            {item.isLibrary ? "📚 Library (Site Content)" : (item.folder ? "📁 Folder" : "📄 File")}
           </p>
         </div>
       </div>
@@ -190,25 +177,23 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
       {error && (
         <div className="error-message">
           {error}
-          <button
-            onClick={() => setError(null)}
-            className="close-error"
-          >
-            ×
-          </button>
+          <button onClick={() => setError(null)} className="close-error">×</button>
         </div>
       )}
 
-      {/* File Classification Section */}
+      {/*
       <FileClassification
         instance={instance}
         account={account}
         item={item}
         currentClassification={classification}
-        onClassificationChanged={handleClassificationChanged}
+        onClassificationChanged={(newId) => {
+          setClassification(newId);
+          loadPermissions();
+        }}
       />
+      */}
 
-      {/* Add Permission Section */}
       <div className="add-permission-section">
         <h3>Grant Access</h3>
         <div className="search-box">
@@ -222,6 +207,34 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
           />
           {isSearching && <span className="searching">Searching...</span>}
         </div>
+
+        {userSearchResults.length === 0 && isEmailFormat && !isSearching && (
+          <div className="search-results">
+            <div className="user-item">
+              <div className="user-info">
+                <p className="user-name">External User</p>
+                <p className="user-email">{searchInput}</p>
+              </div>
+              <div className="user-action">
+                <select
+                  value={getUserRole("external")}
+                  onChange={(e) => setUserRole("external", e.target.value)}
+                  className="role-select"
+                >
+                  <option value="read">Viewer</option>
+                  <option value="write">Editor</option>
+                </select>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => handleAddPermission(searchInput, "external")}
+                  disabled={isAddingPermission}
+                >
+                  {isAddingPermission ? "Inviting..." : "Invite External"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {userSearchResults.length > 0 && (
           <div className="search-results">
@@ -238,14 +251,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     className="role-select"
                   >
                     <option value="read">Viewer</option>
-                    {/* <option value="contribute">Restrict Editor</option> */}
+                    {!item.isLibrary && <option value="contribute">Restrict Editor</option>}
                     <option value="write">Editor</option>
                   </select>
                   <button
                     className="btn btn-primary btn-sm"
-                    onClick={() =>
-                      handleAddPermission(user.mail || user.userPrincipalName, user.id)
-                    }
+                    onClick={() => handleAddPermission(user.mail || user.userPrincipalName, user.id)}
                     disabled={isAddingPermission}
                   >
                     {isAddingPermission ? "Adding..." : "Add"}
@@ -257,15 +268,10 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         )}
       </div>
 
-      {/* Current Permissions Section */}
       <div className="current-permissions-section">
         <h3>Current Access</h3>
-
         {isLoading ? (
-          <div className="loading">
-            <span className="spinner"></span>
-            <p>Loading permissions...</p>
-          </div>
+          <div className="loading"><span className="spinner"></span><p>Loading permissions...</p></div>
         ) : permissions.length === 0 ? (
           <p className="no-permissions">No direct permissions set</p>
         ) : (
@@ -276,35 +282,23 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   {perm.grantedTo?.user ? (
                     <>
                       <div className={`user-avatar ${getRoleClass(perm.roles)}`}>
-                        {perm.grantedTo.user.displayName?.charAt(0).toUpperCase() ||
-                          "U"}
+                        {perm.grantedTo.user.displayName?.charAt(0).toUpperCase() || "U"}
                       </div>
                       <div className="user-details">
-                        <p className="user-name">
-                          {perm.grantedTo.user.displayName}
-                        </p>
-                        <p className="user-email">
-                          {perm.grantedTo.user.email}
-                        </p>
+                        <p className="user-name">{perm.grantedTo.user.displayName}</p>
+                        <p className="user-email">{perm.grantedTo.user.email}</p>
                       </div>
                     </>
                   ) : perm.grantedTo?.group ? (
                     <>
                       <div className={`user-avatar group ${getRoleClass(perm.roles)}`}>G</div>
                       <div className="user-details">
-                        <p className="user-name">
-                          {perm.grantedTo.group.displayName}
-                        </p>
+                        <p className="user-name">{perm.grantedTo.group.displayName}</p>
                         <p className="user-email">Group</p>
                       </div>
                     </>
                   ) : (
-                    <>
-                      <div className="user-avatar">?</div>
-                      <div className="user-details">
-                        <p className="user-name">Unknown</p>
-                      </div>
-                    </>
+                    <div className="user-details"><p className="user-name">Unknown</p></div>
                   )}
                 </div>
                 {editingPermissionId === perm.id ? (
@@ -315,19 +309,19 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                       className="role-select-edit"
                     >
                       <option value="read">Viewer</option>
-                      {/* <option value="contribute">Restrict Editor</option> */}
+                      {!item.isLibrary && <option value="contribute">Restrict Editor</option>}
                       <option value="write">Editor</option>
                     </select>
                     <button
-                      className="btn btn-primary btn-sm edit-save-btn"
+                      className="btn btn-primary btn-sm"
                       onClick={() => handleSavePermissionEdit(perm.id, perm.roles[0])}
                       disabled={isUpdatingPermission}
                     >
                       {isUpdatingPermission ? "Saving..." : "Save"}
                     </button>
                     <button
-                      className="btn btn-outline btn-sm edit-cancel-btn"
-                      onClick={handleCancelPermissionEdit}
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setEditingPermissionId(null)}
                       disabled={isUpdatingPermission}
                     >
                       Cancel
@@ -336,23 +330,21 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                 ) : (
                   <div className="permission-actions">
                     <span className={`role-badge ${getRoleClass(perm.roles)}`}>{getRoleLabel(perm.roles)}</span>
-                    {canEditPermission(perm) && (
-                      <button
-                        className="btn btn-outline btn-sm edit-btn"
-                        onClick={() => handleEditPermission(perm.id, perm.roles[0])}
-                        title="Edit permission"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {canRemovePermission(perm) && (
-                      <button
-                        className="btn btn-outline btn-sm remove-btn"
-                        onClick={() => handleRemovePermission(perm.id)}
-                        title="Remove permission"
-                      >
-                        Remove
-                      </button>
+                    {!perm.roles?.includes("owner") && (
+                      <>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => { setEditingPermissionId(perm.id); setEditingNewRole(perm.roles[0]); }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => handleRemovePermission(perm.id)}
+                        >
+                          Remove
+                        </button>
+                      </>
                     )}
                   </div>
                 )}

@@ -9,7 +9,8 @@ export const applyClassificationPermissions = async (
   instance,
   account,
   itemId,
-  classificationId
+  classificationId,
+  isLibrary = false
 ) => {
   try {
     const classification = getClassification(classificationId);
@@ -18,9 +19,6 @@ export const applyClassificationPermissions = async (
       throw new Error(`Invalid classification: ${classificationId}`);
     }
 
-    // Get current permissions to clear them first
-    // Note: In production, you might want to be more selective about what to remove
-    
     const results = {
       added: [],
       failed: [],
@@ -35,7 +33,10 @@ export const applyClassificationPermissions = async (
           account,
           itemId,
           `${ownerGroup}@m365.co.th`, // Adjust email domain as needed
-          "owner"
+          "owner",
+          null,
+          false,
+          isLibrary
         );
         results.added.push({
           email: `${ownerGroup}@m365.co.th`,
@@ -58,7 +59,10 @@ export const applyClassificationPermissions = async (
           account,
           itemId,
           `${editorGroup}@m365.co.th`,
-          "write"
+          "write",
+          null,
+          false,
+          isLibrary
         );
         results.added.push({
           email: `${editorGroup}@m365.co.th`,

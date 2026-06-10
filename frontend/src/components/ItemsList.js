@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getItemsList } from "../services/sharePointService";
+import { getAllSiteContents, getDriveItems, getDriveIdFromListId } from "../services/sharePointService";
 import ItemPermissions from "./ItemPermissions";
 import "./ItemsList.css";
 
@@ -9,22 +9,39 @@ function ItemsList({ instance, accounts }) {
   const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
+  
+  // Navigation state
+  // level: 'site' | 'library' | 'folder'
+  const [navLevel, setNavLevel] = useState("site");
+  const [currentDriveId, setCurrentDriveId] = useState(null);
   const [currentFolderId, setCurrentFolderId] = useState("root");
-  const [folderHistory, setFolderHistory] = useState([{ id: "root", name: "Root" }]);
+  const [navHistory, setNavHistory] = useState([{ level: "site", id: "site", name: "Site Contents" }]);
 
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const itemsList = await getItemsList(instance, accounts[0], currentFolderId);
-      setItems(itemsList);
+      if (navLevel === "site") {
+        const contents = await getAllSiteContents(instance, accounts[0]);
+        // Map lists to a common item format
+        setItems(contents.map(l => ({
+          id: l.id,
+          name: l.displayName,
+          isLibrary: true,
+          webUrl: l.webUrl,
+          lastModifiedDateTime: new Date().toISOString(), // Lists don't have this easily in the summary
+        })));
+      } else {
+        const driveItems = await getDriveItems(instance, accounts[0], currentDriveId, currentFolderId);
+        setItems(driveItems);
+      }
     } catch (err) {
       setError(err.message || "Failed to load items");
       console.error("Error loading items:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [instance, accounts, currentFolderId]);
+  }, [instance, accounts, navLevel, currentDriveId, currentFolderId]);
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -32,45 +49,63 @@ function ItemsList({ instance, accounts }) {
     }
   }, [accounts, loadItems]);
 
+  const handleLibraryClick = async (library) => {
+    setIsLoading(true);
+    try {
+      const driveId = await getDriveIdFromListId(instance, accounts[0], library.id);
+      setCurrentDriveId(driveId);
+      setCurrentFolderId("root");
+      setNavLevel("library");
+      setNavHistory((prev) => [...prev, { level: "library", id: library.id, driveId, name: library.name }]);
+      setActiveTab("all");
+    } catch (err) {
+      setError("Failed to access library: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFolderClick = (folder) => {
     setCurrentFolderId(folder.id);
-    setFolderHistory((prev) => [...prev, { id: folder.id, name: folder.name }]);
+    setNavLevel("folder");
+    setNavHistory((prev) => [...prev, { level: "folder", id: folder.id, name: folder.name }]);
     setActiveTab("all");
   };
 
   const handleBreadcrumbClick = (index) => {
-    const newHistory = folderHistory.slice(0, index + 1);
-    setFolderHistory(newHistory);
-    setCurrentFolderId(newHistory[index].id);
+    const newHistory = navHistory.slice(0, index + 1);
+    const target = newHistory[index];
+    
+    setNavHistory(newHistory);
+    setNavLevel(target.level);
+    
+    if (target.level === "site") {
+      setCurrentDriveId(null);
+      setCurrentFolderId("root");
+    } else if (target.level === "library") {
+      setCurrentDriveId(target.driveId);
+      setCurrentFolderId("root");
+    } else {
+      setCurrentFolderId(target.id);
+    }
     setActiveTab("all");
   };
 
   const getItemIcon = (item) => {
-    if (item.folder) {
-      return "📁";
-    }
+    if (item.isLibrary) return "📚";
+    if (item.folder) return "📁";
     const ext = item.name.split(".").pop()?.toLowerCase();
     const iconMap = {
-      pdf: "📄",
-      doc: "📝",
-      docx: "📝",
-      xlsx: "📊",
-      xls: "📊",
-      pptx: "🎯",
-      ppt: "🎯",
-      txt: "📄",
-      jpg: "🖼️",
-      jpeg: "🖼️",
-      png: "🖼️",
-      gif: "🖼️",
+      pdf: "📄", doc: "📝", docx: "📝", xlsx: "📊", xls: "📊",
+      pptx: "🎯", ppt: "🎯", txt: "📄", jpg: "🖼️", jpeg: "🖼️",
+      png: "🖼️", gif: "🖼️",
     };
     return iconMap[ext] || "📎";
   };
 
   const getPillLabel = (item) => {
-    if (item.folder) {
-      return "Folder";
-    }
+    if (item.isLibrary) return "Library";
+    if (item.folder) return "Folder";
     const ext = item.name.split(".").pop()?.toUpperCase() || "FILE";
     return `${ext} File`;
   };
@@ -85,20 +120,17 @@ function ItemsList({ instance, accounts }) {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year: "numeric", month: "short", day: "numeric",
     });
   };
 
-  // Card background tint classes matching the color mockups
   const cardTints = ["green", "blue", "purple", "yellow", "orange", "teal"];
 
   if (isLoading) {
     return (
       <div className="loading">
         <span className="spinner"></span>
-        <p>Loading items...</p>
+        <p>Loading {navLevel === "site" ? "Site Contents" : "Items"}...</p>
       </div>
     );
   }
@@ -122,7 +154,7 @@ function ItemsList({ instance, accounts }) {
             className="btn btn-outline back-btn"
             onClick={() => setSelectedItem(null)}
           >
-            ← Back to Folder
+            ← Back to {navLevel === "site" ? "Site" : "Folder"}
           </button>
           <ItemPermissions
             instance={instance}
@@ -130,32 +162,36 @@ function ItemsList({ instance, accounts }) {
             account={accounts[0]}
             onPermissionChanged={() => {
               setSelectedItem(null);
+              loadItems();
             }}
           />
         </div>
       ) : (
         <>
-          {/* Sub-Navbar containing Categories/Tabs and quick actions */}
           <div className="portal-subbar">
             <div className="tab-links">
               <button 
                 className={`tab-link ${activeTab === "all" ? "active" : ""}`}
                 onClick={() => setActiveTab("all")}
               >
-                All Files
+                All {navLevel === "site" ? "Contents" : "Files"}
               </button>
-              <button 
-                className={`tab-link ${activeTab === "folders" ? "active" : ""}`}
-                onClick={() => setActiveTab("folders")}
-              >
-                Folders
-              </button>
-              <button 
-                className={`tab-link ${activeTab === "files" ? "active" : ""}`}
-                onClick={() => setActiveTab("files")}
-              >
-                Files
-              </button>
+              {navLevel !== "site" && (
+                <>
+                  <button 
+                    className={`tab-link ${activeTab === "folders" ? "active" : ""}`}
+                    onClick={() => setActiveTab("folders")}
+                  >
+                    Folders
+                  </button>
+                  <button 
+                    className={`tab-link ${activeTab === "files" ? "active" : ""}`}
+                    onClick={() => setActiveTab("files")}
+                  >
+                    Files
+                  </button>
+                </>
+              )}
             </div>
             
             <div className="subbar-actions">
@@ -166,33 +202,31 @@ function ItemsList({ instance, accounts }) {
             </div>
           </div>
 
-          {/* Breadcrumbs Navigation */}
           <div className="breadcrumbs">
-            {folderHistory.map((folder, index) => (
-              <span key={folder.id} className="breadcrumb-node">
+            {navHistory.map((node, index) => (
+              <span key={`${node.level}-${node.id}`} className="breadcrumb-node">
                 {index > 0 && <span className="breadcrumb-separator">/</span>}
                 <button 
-                  className={`breadcrumb-item ${index === folderHistory.length - 1 ? "active" : ""}`}
+                  className={`breadcrumb-item ${index === navHistory.length - 1 ? "active" : ""}`}
                   onClick={() => handleBreadcrumbClick(index)}
-                  disabled={index === folderHistory.length - 1}
+                  disabled={index === navHistory.length - 1}
                 >
-                  {folder.name === "root" || folder.name === "Root" ? "📁 Root" : folder.name}
+                  {node.level === "site" ? "🏠 Site Contents" : (node.level === "library" ? `📚 ${node.name}` : node.name)}
                 </button>
               </span>
             ))}
           </div>
 
-          {/* Grid Layout of Items */}
           {items.length === 0 ? (
             <div className="empty-state">
-              <p>No items found in this directory.</p>
+              <p>No items found in this {navLevel === "site" ? "site" : "directory"}.</p>
             </div>
           ) : (
             <div className="items-grid">
               {items
                 .filter(item => {
                   if (activeTab === "folders") return item.folder;
-                  if (activeTab === "files") return !item.folder;
+                  if (activeTab === "files") return !item.folder && !item.isLibrary;
                   return true;
                 })
                 .map((item, index) => {
@@ -202,14 +236,15 @@ function ItemsList({ instance, accounts }) {
                       key={item.id}
                       className={`item-card tint-${tint}`}
                       onClick={() => {
-                        if (item.folder) {
+                        if (item.isLibrary) {
+                          handleLibraryClick(item);
+                        } else if (item.folder) {
                           handleFolderClick(item);
                         } else {
                           setSelectedItem(item);
                         }
                       }}
                     >
-                      {/* Top badge indicators on the card */}
                       <div className="card-badge-header">
                         <div className="card-icon-badge">
                           <span className="file-icon-symbol">{getItemIcon(item)}</span>
@@ -219,48 +254,59 @@ function ItemsList({ instance, accounts }) {
                         </div>
                       </div>
 
-                      {/* Card Content */}
                       <h3 className="card-item-title" title={item.name}>{item.name}</h3>
                       
                       <p className="card-item-desc">
-                        {item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`}
+                        {item.isLibrary ? "Document Library (Site Content)" : 
+                         (item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`)}
                       </p>
 
                       <div className="card-meta-row">
                         <span className="card-date-modified">
-                          Modified {formatDate(item.lastModifiedDateTime)}
+                          {item.isLibrary ? "Site Content Level" : `Modified ${formatDate(item.lastModifiedDateTime)}`}
                         </span>
-                        {item.lastModifiedBy?.user && (
-                          <span className="card-modified-by" title={item.lastModifiedBy.user.displayName}>
-                            by {item.lastModifiedBy.user.displayName.split(" ")[0]}
-                          </span>
-                        )}
                       </div>
 
-                      {/* Card Actions Footer */}
                       <div className="card-action-bar">
-                        {item.folder ? (
+                        {item.isLibrary ? (
                           <>
                             <button 
                               className="card-btn card-btn-primary"
-                              onClick={(e) => { e.stopPropagation(); handleFolderClick(item); }}
+                              onClick={(e) => { e.stopPropagation(); handleLibraryClick(item); }}
                             >
-                              📂 Open
+                              📂 Open Library
                             </button>
                             <button 
                               className="card-btn card-btn-secondary"
                               onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
                             >
-                              🛡️ Access
+                              🛡️ Library Access
                             </button>
                           </>
                         ) : (
-                          <button 
-                            className="card-btn card-btn-primary full-width"
-                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                          >
-                            🛡️ Manage Access
-                          </button>
+                          item.folder ? (
+                            <>
+                              <button 
+                                className="card-btn card-btn-primary"
+                                onClick={(e) => { e.stopPropagation(); handleFolderClick(item); }}
+                              >
+                                📂 Open
+                              </button>
+                              <button 
+                                className="card-btn card-btn-secondary"
+                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                              >
+                                🛡️ Access
+                              </button>
+                            </>
+                          ) : (
+                            <button 
+                              className="card-btn card-btn-primary full-width"
+                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                            >
+                              🛡️ Manage Access
+                            </button>
+                          )
                         )}
                       </div>
                     </div>

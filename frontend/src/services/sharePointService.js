@@ -89,15 +89,102 @@ export const getItemsList = async (instance, account, folderId = "root") => {
 };
 
 /**
- * Get permissions of a specific item
+ * Get all document libraries (site contents) from the SharePoint site
  */
-export const getItemPermissions = async (instance, account, itemId) => {
+export const getAllSiteContents = async (instance, account) => {
+  try {
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
+    
+    // Fetch lists and filter for document libraries (template 101)
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName,name,list,webUrl`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch site contents: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    // Filter for document libraries (where list.template is 'documentLibrary')
+    return (data.value || []).filter(l => l.list && l.list.template === "documentLibrary");
+  } catch (error) {
+    console.error("Error fetching site contents:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get Drive ID for a specific List ID
+ */
+export const getDriveIdFromListId = async (instance, account, listId) => {
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=id,grantedTo,roles`,
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/drive?$select=id`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch drive for list: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.id;
+  } catch (error) {
+    console.error("Error fetching drive ID:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get items from a specific drive (library)
+ */
+export const getDriveItems = async (instance, account, driveId, folderId = "root") => {
+  try {
+    const token = await getAccessToken(instance, account);
+    
+    const response = await fetch(
+      `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${folderId}/children?$select=id,name,size,webUrl,folder,file,lastModifiedDateTime,lastModifiedBy`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch drive items: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.value || [];
+  } catch (error) {
+    console.error("Error fetching drive items:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get permissions of a specific item
+ */
+export const getItemPermissions = async (instance, account, itemId, isLibrary = false) => {
+  try {
+    const siteId = await getSiteId(instance, account);
+    const token = await getAccessToken(instance, account);
+    
+    // Different endpoint for Library (List) vs Item (File/Folder)
+    const endpoint = isLibrary
+      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions?$select=id,grantedTo,roles`
+      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=id,grantedTo,roles`;
+
+    const response = await fetch(
+      endpoint,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -317,9 +404,12 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
  * @param {string|null} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
  * @param {boolean} isFolder - true if item is a folder (affects SharePoint REST endpoint)
  */
-export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false) => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false, isLibrary = false) => {
   // 'contribute' uses SharePoint REST API (Graph API does not support it)
   if (role === "contribute") {
+    if (isLibrary) {
+      throw new Error("Contribute role is not yet supported for entire libraries via this tool.");
+    }
     if (!itemServerRelativeUrl) {
       throw new Error("Restrict Editor requires itemServerRelativeUrl to use SharePoint REST API");
     }
@@ -331,8 +421,13 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
+    // Different invite endpoint for Library vs Item
+    const endpoint = isLibrary
+      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/invite`
+      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`;
+
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`,
+      endpoint,
       {
         method: "POST",
         headers: {
@@ -344,7 +439,7 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
           requireSignIn: true,
           sendInvitation: true,
           roles: [mapRoleToGraphRole(role)],
-          message: `You have been granted access to this file/folder.`
+          message: `You have been granted access to this ${isLibrary ? 'library' : 'file/folder'}.`
         }),
       }
     );
@@ -366,13 +461,17 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
  * @param {string} itemId - Item ID
  * @param {string} permissionId - Permission ID
  */
-export const removeItemPermission = async (instance, account, itemId, permissionId) => {
+export const removeItemPermission = async (instance, account, itemId, permissionId, isLibrary = false) => {
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
+    const endpoint = isLibrary
+      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions/${permissionId}`
+      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
+
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
+      endpoint,
       {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -395,7 +494,7 @@ export const removeItemPermission = async (instance, account, itemId, permission
  * NOTE: Graph API only supports 'read' and 'write' for PATCH.
  * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
-export const updateItemPermission = async (instance, account, itemId, permissionId, newRole) => {
+export const updateItemPermission = async (instance, account, itemId, permissionId, newRole, isLibrary = false) => {
   if (newRole === "contribute") {
     throw new Error("Updating to Restrict Editor is not supported.");
   }
@@ -403,9 +502,13 @@ export const updateItemPermission = async (instance, account, itemId, permission
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
+    const endpoint = isLibrary
+      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions/${permissionId}`
+      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
+
     // Standard Graph API PATCH
     const response = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`,
+      endpoint,
       {
         method: "PATCH",
         headers: {
