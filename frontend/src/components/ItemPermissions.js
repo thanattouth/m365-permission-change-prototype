@@ -141,7 +141,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     const role = roles[0].toLowerCase();
     const roleMap = {
       read: "Viewer",
-      contribute: "Restrict Editor",
+      contribute: "Custom Role",
       write: "Editor",
       owner: "Owner",
     };
@@ -251,7 +251,6 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     className="role-select"
                   >
                     <option value="read">Viewer</option>
-                    {!item.isLibrary && <option value="contribute">Restrict Editor</option>}
                     <option value="write">Editor</option>
                   </select>
                   <button
@@ -319,7 +318,6 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                       className="role-select-edit"
                     >
                       <option value="read">Viewer</option>
-                      {!item.isLibrary && <option value="contribute">Restrict Editor</option>}
                       <option value="write">Editor</option>
                     </select>
                     <button
