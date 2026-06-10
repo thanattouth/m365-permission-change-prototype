@@ -276,6 +276,24 @@
   gap: 12px;
 }
 
+.item-count {
+  min-height: 32px;
+  padding: 7px 13px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
 .icon-btn {
   width: 36px;
   height: 36px;
