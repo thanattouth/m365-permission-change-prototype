@@ -1,56 +1,53 @@
 /* ============================================
-   Design System - Light Glassmorphic System
+   Design System - Apple-inspired Product System
    ============================================ */
 :root {
-  /* Background Canvas */
-  --bg-primary: #f1f5f9;
-  --bg-gradient: radial-gradient(circle at 15% 20%, rgba(217, 240, 230, 0.8) 0%, transparent 45%),
-                 radial-gradient(circle at 85% 15%, rgba(224, 218, 245, 0.8) 0%, transparent 45%),
-                 radial-gradient(circle at 50% 85%, rgba(254, 243, 199, 0.7) 0%, transparent 50%),
-                 #f8fafc;
-
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.35);
-  --glass-bg-hover: rgba(255, 255, 255, 0.5);
-  --glass-border: rgba(255, 255, 255, 0.45);
-  --glass-border-hover: rgba(255, 255, 255, 0.75);
-  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
-  --glass-shadow-hover: 0 16px 48px 0 rgba(15, 23, 42, 0.08);
-
-  /* Primary Branding (Mockup Accent) */
-  --accent-primary: #0f172a; /* Sleek black buttons from mockup */
-  --accent-primary-hover: #1e293b;
-  --accent-gradient: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-  --accent-glow: rgba(15, 23, 42, 0.1);
-
-  /* Brand Tints for Cards (Mockup styling) */
-  --tint-green: linear-gradient(135deg, rgba(216, 241, 230, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
-  --tint-blue: linear-gradient(135deg, rgba(219, 234, 254, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
-  --tint-purple: linear-gradient(135deg, rgba(243, 232, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
-  --tint-yellow: linear-gradient(135deg, rgba(254, 243, 199, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
-  --tint-orange: linear-gradient(135deg, rgba(255, 237, 213, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
-  --tint-teal: linear-gradient(135deg, rgba(204, 251, 241, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --surface-pearl: #fafafc;
+  --surface-black: #000000;
+  --surface-tile-1: #272729;
+  --hairline: #e0e0e0;
+  --divider-soft: rgba(0, 0, 0, 0.04);
 
   /* Typography */
-  --font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-primary: #1d1d1f;
+  --text-secondary: #333333;
+  --text-muted: #7a7a7a;
+  --text-on-dark: #ffffff;
+
+  /* Primary Accent */
+  --accent-primary: #0066cc;
+  --accent-primary-hover: #005bb8;
+  --accent-focus: #0071e3;
+  --accent-on-dark: #2997ff;
+  --accent-glow: rgba(0, 113, 227, 0.2);
+
+  /* Compatibility aliases for existing components */
+  --bg-primary: var(--canvas-parchment);
+  --glass-bg: var(--canvas);
+  --glass-bg-hover: var(--surface-pearl);
+  --glass-border: var(--hairline);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
+  --glass-shadow: none;
+  --glass-shadow-hover: none;
+  --accent-gradient: var(--accent-primary);
 
   /* Alerts */
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.08);
-  --danger-border: rgba(239, 68, 68, 0.15);
+  --danger: #c01b1b;
+  --danger-bg: #fff1f1;
+  --danger-border: #f2c2c2;
 
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.08);
-  --success-border: rgba(16, 185, 129, 0.15);
+  --success: #0b6b3a;
+  --success-bg: #f0fbf4;
+  --success-border: #c6efd3;
 
   /* Radius */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-xl: 18px;
   --radius-full: 9999px;
 
   /* Animations */
@@ -81,11 +78,11 @@ body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-gradient);
-  background-attachment: fixed;
+  background: var(--canvas-parchment);
   color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.5;
+  font-size: 17px;
+  line-height: 1.47;
   overflow-x: hidden;
 }
 

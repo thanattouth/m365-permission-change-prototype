@@ -1,8 +1,28 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('@azure/msal-browser', () => ({
+  PublicClientApplication: jest.fn().mockImplementation(() => ({
+    loginRedirect: jest.fn(),
+    logoutPopup: jest.fn(),
+    acquireTokenSilent: jest.fn(),
+  })),
+}));
+
+jest.mock('@azure/msal-react', () => ({
+  MsalProvider: ({ children }) => children,
+  useMsal: () => ({
+    instance: {
+      loginRedirect: jest.fn(),
+      logoutPopup: jest.fn(),
+      acquireTokenSilent: jest.fn(),
+    },
+    accounts: [],
+  }),
+}));
+
+test('renders the sign in screen', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(screen.getByText(/permission manager/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /sign in with microsoft/i })).toBeInTheDocument();
 });
