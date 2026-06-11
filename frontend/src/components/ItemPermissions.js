@@ -21,7 +21,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [userRoleMap, setUserRoleMap] = useState({});
-  const [isAddingPermission, setIsAddingPermission] = useState(false);
+  const [addingPermissionUserId, setAddingPermissionUserId] = useState(null);
   // const [classification, setClassification] = useState(null);
   const [editingPermissionId, setEditingPermissionId] = useState(null);
   const [editingNewRole, setEditingNewRole] = useState(null);
@@ -68,10 +68,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const getUserRole = (userId) => userRoleMap[userId] || "read";
   const setUserRole = (userId, role) =>
     setUserRoleMap((prev) => ({ ...prev, [userId]: role }));
+  const isAddingPermission = addingPermissionUserId !== null;
+  const isAddingUser = (userId) => addingPermissionUserId === userId;
 
   const handleAddPermission = async (userEmail, userId) => {
     const role = getUserRole(userId);
-    setIsAddingPermission(true);
+    setAddingPermissionUserId(userId);
     setError(null);
     try {
       let itemServerRelativeUrl = null;
@@ -101,7 +103,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     } catch (err) {
       setError(err.message || "Failed to add permission");
     } finally {
-      setIsAddingPermission(false);
+      setAddingPermissionUserId(null);
     }
   };
 
@@ -226,6 +228,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   value={getUserRole("external")}
                   onChange={(e) => setUserRole("external", e.target.value)}
                   className="role-select"
+                  disabled={isAddingPermission}
                 >
                   <option value="read">Viewer</option>
                   <option value="write">Editor</option>
@@ -235,7 +238,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   onClick={() => handleAddPermission(searchInput, "external")}
                   disabled={isAddingPermission}
                 >
-                  {isAddingPermission ? "Inviting..." : "Invite External"}
+                  {isAddingUser("external") ? "Inviting..." : "Invite External"}
                 </button>
               </div>
             </div>
@@ -255,6 +258,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     value={getUserRole(user.id)}
                     onChange={(e) => setUserRole(user.id, e.target.value)}
                     className="role-select"
+                    disabled={isAddingPermission}
                   >
                     <option value="read">Viewer</option>
                     <option value="write">Editor</option>
@@ -264,7 +268,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                     onClick={() => handleAddPermission(user.mail || user.userPrincipalName, user.id)}
                     disabled={isAddingPermission}
                   >
-                    {isAddingPermission ? "Adding..." : "Add"}
+                    {isAddingUser(user.id) ? "Adding..." : "Add"}
                   </button>
                 </div>
               </div>
