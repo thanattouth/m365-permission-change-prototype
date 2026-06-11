@@ -3,6 +3,7 @@ import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
 import { msalConfig, loginRequest } from "./authConfig";
 import ItemsList from "./components/ItemsList";
+import Icon from "./components/Icon";
 import "./App.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -95,7 +96,7 @@ function MainApp() {
         <div className="card">
           <div className="auth-section">
             <div className="header" style={{ textAlign: "center" }}>
-              <span className="shield-icon">🛡️</span>
+              <Icon name="shield" className="shield-icon" size={40} />
               <h1>M365</h1>
               <p className="subtitle">Permission Manager</p>
             </div>
@@ -126,13 +127,14 @@ function MainApp() {
           {/* Main Top Header Navbar */}
           <header className="portal-navbar">
             <div className="brand-section">
-              <span className="brand-logo">🛠️</span>
+              <Icon name="tool" className="brand-logo" size={14} />
               <span>M365 Portal</span>
             </div>
             
             <div className="nav-user-actions" ref={dropdownRef}>
               <span className="site-indicator">
-                🌐 Connected to SharePoint Site
+                <Icon name="globe" className="site-indicator-icon" size={13} />
+                Connected to SharePoint Site
               </span>
               
               <button 

@@ -80,6 +80,12 @@
   transition: transform var(--transition-fast);
 }
 
+.file-icon-symbol {
+  width: 22px;
+  height: 22px;
+  color: var(--text-primary);
+}
+
 .item-card:hover .card-icon-badge {
   transform: none;
   background: var(--canvas);
@@ -207,6 +213,13 @@
   cursor: pointer;
   transition: color var(--transition-fast);
   font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.breadcrumb-icon {
+  flex-shrink: 0;
 }
 
 .breadcrumb-item:hover:not(:disabled) {
@@ -244,6 +257,10 @@
   min-height: 36px;
   height: auto;
   box-sizing: border-box;
+}
+
+.card-btn .app-icon {
+  flex-shrink: 0;
 }
 
 .card-btn-primary {

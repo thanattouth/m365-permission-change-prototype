@@ -73,7 +73,7 @@
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 400;
   font-size: 12px;
   color: var(--text-on-dark);
@@ -81,12 +81,9 @@
 }
 
 .brand-logo {
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
   background: transparent;
   color: var(--text-on-dark);
   border-radius: 0;
@@ -134,7 +131,14 @@
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+}
+
+.site-indicator-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  color: var(--accent-on-dark);
 }
 
 .avatar-btn {
@@ -350,10 +354,12 @@
 }
 
 .shield-icon {
-  font-size: 40px;
+  width: 40px;
+  height: 40px;
   margin-bottom: 16px;
   display: inline-block;
   animation: none;
+  color: var(--accent-primary);
 }
 
 @keyframes pulseGlow {

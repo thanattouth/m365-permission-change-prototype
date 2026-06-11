@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getAllSiteContents, getDriveItems, getDriveIdFromListId } from "../services/sharePointService";
 import ItemPermissions from "./ItemPermissions";
+import Icon from "./Icon";
 import "./ItemsList.css";
 
 function ItemsList({ instance, accounts }) {
@@ -91,16 +92,16 @@ function ItemsList({ instance, accounts }) {
     setActiveTab("all");
   };
 
-  const getItemIcon = (item) => {
-    if (item.isLibrary) return "📚";
-    if (item.folder) return "📁";
+  const getItemIconName = (item) => {
+    if (item.isLibrary) return "library";
+    if (item.folder) return "folder";
     const ext = item.name.split(".").pop()?.toLowerCase();
     const iconMap = {
-      pdf: "📄", doc: "📝", docx: "📝", xlsx: "📊", xls: "📊",
-      pptx: "🎯", ppt: "🎯", txt: "📄", jpg: "🖼️", jpeg: "🖼️",
-      png: "🖼️", gif: "🖼️",
+      pdf: "doc", doc: "doc", docx: "doc", xlsx: "sheet", xls: "sheet",
+      pptx: "slides", ppt: "slides", txt: "doc", jpg: "image", jpeg: "image",
+      png: "image", gif: "image",
     };
-    return iconMap[ext] || "📎";
+    return iconMap[ext] || "paperclip";
   };
 
   const getPillLabel = (item) => {
@@ -197,7 +198,7 @@ function ItemsList({ instance, accounts }) {
             <div className="subbar-actions">
               <span className="item-count">{items.length} items</span>
               <button className="icon-btn" onClick={loadItems} title="Refresh items list">
-                🔄
+                <Icon name="refresh" size={16} />
               </button>
             </div>
           </div>
@@ -211,7 +212,19 @@ function ItemsList({ instance, accounts }) {
                   onClick={() => handleBreadcrumbClick(index)}
                   disabled={index === navHistory.length - 1}
                 >
-                  {node.level === "site" ? "🏠 Site Contents" : (node.level === "library" ? `📚 ${node.name}` : node.name)}
+                  {node.level === "site" ? (
+                    <>
+                      <Icon name="home" className="breadcrumb-icon" size={14} />
+                      Site Contents
+                    </>
+                  ) : node.level === "library" ? (
+                    <>
+                      <Icon name="library" className="breadcrumb-icon" size={14} />
+                      {node.name}
+                    </>
+                  ) : (
+                    node.name
+                  )}
                 </button>
               </span>
             ))}
@@ -247,7 +260,7 @@ function ItemsList({ instance, accounts }) {
                     >
                       <div className="card-badge-header">
                         <div className="card-icon-badge">
-                          <span className="file-icon-symbol">{getItemIcon(item)}</span>
+                          <Icon name={getItemIconName(item)} className="file-icon-symbol" size={22} />
                         </div>
                         <div className="card-type-pill">
                           {getPillLabel(item)}
@@ -274,13 +287,15 @@ function ItemsList({ instance, accounts }) {
                               className="card-btn card-btn-primary"
                               onClick={(e) => { e.stopPropagation(); handleLibraryClick(item); }}
                             >
-                              📂 Open Library
+                              <Icon name="folder" size={15} />
+                              Open Library
                             </button>
                             <button 
                               className="card-btn card-btn-secondary"
                               onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
                             >
-                              🛡️ Library Access
+                              <Icon name="shield" size={15} />
+                              Library Access
                             </button>
                           </>
                         ) : (
@@ -290,13 +305,15 @@ function ItemsList({ instance, accounts }) {
                                 className="card-btn card-btn-primary"
                                 onClick={(e) => { e.stopPropagation(); handleFolderClick(item); }}
                               >
-                                📂 Open
+                                <Icon name="folder" size={15} />
+                                Open
                               </button>
                               <button 
                                 className="card-btn card-btn-secondary"
                                 onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
                               >
-                                🛡️ Access
+                                <Icon name="shield" size={15} />
+                                Access
                               </button>
                             </>
                           ) : (
@@ -304,7 +321,8 @@ function ItemsList({ instance, accounts }) {
                               className="card-btn card-btn-primary full-width"
                               onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
                             >
-                              🛡️ Manage Access
+                              <Icon name="shield" size={15} />
+                              Manage Access
                             </button>
                           )
                         )}

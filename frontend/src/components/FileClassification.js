@@ -5,6 +5,7 @@ import {
   getClassificationLabel,
 } from "../config/classificationConfig";
 import { applyClassificationPermissions } from "../services/classificationService";
+import Icon from "./Icon";
 import "./FileClassification.css";
 
 function FileClassification({
@@ -116,7 +117,8 @@ function FileClassification({
                   <p className="badge-description">{classification.description}</p>
                   {classification.requiresApproval && (
                     <p className="badge-approval">
-                      ⚠️ Requires {classification.approverRole} approval
+                      <Icon name="warning" className="badge-approval-icon" size={15} />
+                      Requires {classification.approverRole} approval
                     </p>
                   )}
                 </>
@@ -140,7 +142,7 @@ function FileClassification({
             onClick={() => setError(null)}
             className="close-error"
           >
-            ×
+            x
           </button>
         </div>
       )}
@@ -148,7 +150,8 @@ function FileClassification({
       {applyResult && applyResult.success && (
         <div className="success-message">
           <div className="success-header">
-            ✓ Classification applied successfully
+            <Icon name="check" className="success-header-icon" size={15} />
+            Classification applied successfully
           </div>
           {applyResult.added.length > 0 && (
             <div className="permissions-added">

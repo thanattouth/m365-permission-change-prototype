@@ -6,6 +6,7 @@ import {
   updateItemPermission,
   searchUsers,
 } from "../services/sharePointService";
+import Icon from "./Icon";
 // File Classification is parked for this prototype phase.
 // The current customer use case only needs admin-driven permission management
 // across site contents, folders, and files.
@@ -169,7 +170,12 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         <div className="permission-item-info">
           <h2>{item.name}</h2>
           <p className="item-type">
-            {item.isLibrary ? "📚 Library (Site Content)" : (item.folder ? "📁 Folder" : "📄 File")}
+            <Icon
+              name={item.isLibrary ? "library" : (item.folder ? "folder" : "file")}
+              className="item-type-icon"
+              size={15}
+            />
+            {item.isLibrary ? "Library (Site Content)" : (item.folder ? "Folder" : "File")}
           </p>
         </div>
       </div>
@@ -177,7 +183,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
       {error && (
         <div className="error-message">
           {error}
-          <button onClick={() => setError(null)} className="close-error">×</button>
+          <button onClick={() => setError(null)} className="close-error">x</button>
         </div>
       )}
 
