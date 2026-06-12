@@ -51,10 +51,10 @@ export const getSharePointToken = async (instance, account) => {
 /**
  * Get SharePoint site ID from URL
  */
-export const getSiteId = async (instance, account) => {
+export const getSiteId = async (instance, account, siteUrlOverride = null) => {
   try {
     const token = await getAccessToken(instance, account);
-    const siteUrl = sharePointConfig.siteUrl;
+    const siteUrl = siteUrlOverride || sharePointConfig.siteUrl;
     
     // Extract hostname and path from SharePoint URL
     const url = new URL(siteUrl);
@@ -83,9 +83,9 @@ export const getSiteId = async (instance, account) => {
 /**
  * Get all items (files and folders) from root of SharePoint site
  */
-export const getItemsList = async (instance, account, folderId = "root") => {
+export const getItemsList = async (instance, account, folderId = "root", siteUrl = null) => {
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     const response = await fetch(
@@ -110,9 +110,9 @@ export const getItemsList = async (instance, account, folderId = "root") => {
 /**
  * Get all document libraries (site contents) from the SharePoint site
  */
-export const getAllSiteContents = async (instance, account) => {
+export const getAllSiteContents = async (instance, account, siteUrl = null) => {
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     // Fetch lists and filter for document libraries (template 101)
@@ -139,9 +139,9 @@ export const getAllSiteContents = async (instance, account) => {
 /**
  * Get Drive ID for a specific List ID
  */
-export const getDriveIdFromListId = async (instance, account, listId) => {
+export const getDriveIdFromListId = async (instance, account, listId, siteUrl = null) => {
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     const response = await fetch(
@@ -192,9 +192,9 @@ export const getDriveItems = async (instance, account, driveId, folderId = "root
 /**
  * Get permissions of a specific item
  */
-export const getItemPermissions = async (instance, account, itemId, isLibrary = false, driveId = null) => {
+export const getItemPermissions = async (instance, account, itemId, isLibrary = false, driveId = null, siteUrl = null) => {
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     // Different endpoint for Library (List) vs Item (File/Folder)
@@ -427,7 +427,7 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
  * @param {string|null} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
  * @param {boolean} isFolder - true if item is a folder (affects SharePoint REST endpoint)
  */
-export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false, isLibrary = false, driveId = null) => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false, isLibrary = false, driveId = null, siteUrl = null) => {
   // 'contribute' uses SharePoint REST API (Graph API does not support it)
   if (role === "contribute") {
     if (isLibrary) {
@@ -441,7 +441,7 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
 
   // 'read' and 'write' use Microsoft Graph API
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     // Different invite endpoint for Library vs Item
@@ -508,9 +508,9 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
  * @param {string} itemId - Item ID
  * @param {string} permissionId - Permission ID
  */
-export const removeItemPermission = async (instance, account, itemId, permissionId, isLibrary = false, driveId = null) => {
+export const removeItemPermission = async (instance, account, itemId, permissionId, isLibrary = false, driveId = null, siteUrl = null) => {
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     const endpoint = isLibrary
@@ -543,12 +543,12 @@ export const removeItemPermission = async (instance, account, itemId, permission
  * NOTE: Graph API only supports 'read' and 'write' for PATCH.
  * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
-export const updateItemPermission = async (instance, account, itemId, permissionId, newRole, isLibrary = false, driveId = null) => {
+export const updateItemPermission = async (instance, account, itemId, permissionId, newRole, isLibrary = false, driveId = null, siteUrl = null) => {
   if (newRole === "contribute") {
     throw new Error("Updating to Restrict Editor is not supported.");
   }
   try {
-    const siteId = await getSiteId(instance, account);
+    const siteId = await getSiteId(instance, account, siteUrl);
     const token = await getAccessToken(instance, account);
     
     const endpoint = isLibrary

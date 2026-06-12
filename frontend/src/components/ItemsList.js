@@ -4,7 +4,7 @@ import ItemPermissions from "./ItemPermissions";
 import Icon from "./Icon";
 import "./ItemsList.css";
 
-function ItemsList({ instance, accounts }) {
+function ItemsList({ instance, accounts, selectedSite }) {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,12 +18,22 @@ function ItemsList({ instance, accounts }) {
   const [currentFolderId, setCurrentFolderId] = useState("root");
   const [navHistory, setNavHistory] = useState([{ level: "site", id: "site", name: "Site Contents" }]);
 
+  useEffect(() => {
+    setItems([]);
+    setSelectedItem(null);
+    setActiveTab("all");
+    setNavLevel("site");
+    setCurrentDriveId(null);
+    setCurrentFolderId("root");
+    setNavHistory([{ level: "site", id: "site", name: selectedSite?.label || "Site Contents" }]);
+  }, [selectedSite]);
+
   const loadItems = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       if (navLevel === "site") {
-        const contents = await getAllSiteContents(instance, accounts[0]);
+        const contents = await getAllSiteContents(instance, accounts[0], selectedSite.url);
         // Map lists to a common item format
         setItems(contents.map(l => ({
           id: l.id,
@@ -45,7 +55,7 @@ function ItemsList({ instance, accounts }) {
     } finally {
       setIsLoading(false);
     }
-  }, [instance, accounts, navLevel, currentDriveId, currentFolderId]);
+  }, [instance, accounts, navLevel, currentDriveId, currentFolderId, selectedSite]);
 
   useEffect(() => {
     if (accounts.length > 0) {
@@ -56,7 +66,7 @@ function ItemsList({ instance, accounts }) {
   const handleLibraryClick = async (library) => {
     setIsLoading(true);
     try {
-      const driveId = await getDriveIdFromListId(instance, accounts[0], library.id);
+      const driveId = await getDriveIdFromListId(instance, accounts[0], library.id, selectedSite.url);
       setCurrentDriveId(driveId);
       setCurrentFolderId("root");
       setNavLevel("library");
@@ -129,12 +139,32 @@ function ItemsList({ instance, accounts }) {
   };
 
   const cardTints = ["green", "blue", "purple", "yellow", "orange", "teal"];
+  const filteredItems = items.filter(item => {
+    if (activeTab === "folders") return item.folder;
+    if (activeTab === "files") return !item.folder && !item.isLibrary;
+    return true;
+  });
+  const currentNode = navHistory[navHistory.length - 1];
+  const pageTitle = navLevel === "site" ? `${selectedSite.label} Contents` : currentNode.name;
+  const pageDescription = navLevel === "site"
+    ? "Review document libraries available in this SharePoint site."
+    : "Browse folders and files, then manage direct access for the selected item.";
+  const libraryCount = items.filter((item) => item.isLibrary).length;
+  const folderCount = items.filter((item) => item.folder).length;
+  const fileCount = items.filter((item) => !item.folder && !item.isLibrary).length;
+  const managementScope = navLevel === "site"
+    ? "Library level"
+    : navLevel === "library"
+      ? "Library root"
+      : "Folder level";
 
   if (isLoading) {
     return (
-      <div className="loading">
-        <span className="spinner"></span>
-        <p>Loading {navLevel === "site" ? "Site Contents" : "Items"}...</p>
+      <div className="items-loading">
+        <div className="items-loading-card">
+          <span className="spinner"></span>
+          <p>Loading {navLevel === "site" ? "Site Contents" : "Items"}...</p>
+        </div>
       </div>
     );
   }
@@ -154,16 +184,12 @@ function ItemsList({ instance, accounts }) {
     <div className="items-container">
       {selectedItem ? (
         <div className="permissions-view">
-          <button
-            className="btn btn-outline back-btn"
-            onClick={() => setSelectedItem(null)}
-          >
-            Back to {navLevel === "site" ? "site contents" : "folder"}
-          </button>
           <ItemPermissions
             instance={instance}
             item={selectedItem}
+            selectedSite={selectedSite}
             account={accounts[0]}
+            onClose={() => setSelectedItem(null)}
             onPermissionChanged={() => {
               setSelectedItem(null);
               loadItems();
@@ -172,6 +198,14 @@ function ItemsList({ instance, accounts }) {
         </div>
       ) : (
         <>
+          <div className="items-page-header">
+            <div>
+              <span className="section-kicker">SharePoint workspace</span>
+              <h1>{pageTitle}</h1>
+              <p>{pageDescription}</p>
+            </div>
+          </div>
+
           <div className="portal-subbar">
             <div className="tab-links">
               <button 
@@ -233,108 +267,123 @@ function ItemsList({ instance, accounts }) {
             ))}
           </div>
 
-          {items.length === 0 ? (
-            <div className="empty-state">
-              <p>No items found in this {navLevel === "site" ? "site" : "directory"}.</p>
-            </div>
-          ) : (
-            <div className="items-grid">
-              {items
-                .filter(item => {
-                  if (activeTab === "folders") return item.folder;
-                  if (activeTab === "files") return !item.folder && !item.isLibrary;
-                  return true;
-                })
-                .map((item, index) => {
-                  const tint = cardTints[index % cardTints.length];
-                  return (
-                    <div
-                      key={item.id}
-                      className={`item-card tint-${tint}`}
-                      onClick={() => {
-                        if (item.isLibrary) {
-                          handleLibraryClick(item);
-                        } else if (item.folder) {
-                          handleFolderClick(item);
-                        } else {
-                          setSelectedItem(item);
-                        }
-                      }}
-                    >
-                      <div className="card-badge-header">
-                        <div className="card-icon-badge">
-                          <Icon name={getItemIconName(item)} className="file-icon-symbol" size={22} />
+          <div className="items-workspace">
+            <div className="items-main">
+              {items.length === 0 ? (
+                <div className="empty-state">
+                  <p>No items found in this {navLevel === "site" ? "site" : "directory"}.</p>
+                </div>
+              ) : (
+                <div className="items-list">
+                  <div className="items-list-header">
+                    <span>Name</span>
+                    <span>Type</span>
+                    <span>Modified</span>
+                    <span>Actions</span>
+                  </div>
+                  {filteredItems.map((item, index) => {
+                    const tint = cardTints[index % cardTints.length];
+                    return (
+                      <div
+                        key={item.id}
+                        className={`item-card tint-${tint}`}
+                        onClick={() => {
+                          if (item.isLibrary) {
+                            handleLibraryClick(item);
+                          } else if (item.folder) {
+                            handleFolderClick(item);
+                          } else {
+                            setSelectedItem(item);
+                          }
+                        }}
+                      >
+                        <div className="card-badge-header">
+                          <div className="card-icon-badge">
+                            <Icon name={getItemIconName(item)} className="file-icon-symbol" size={22} />
+                          </div>
+                          <div className="card-title-block">
+                            <h3 className="card-item-title" title={item.name}>{item.name}</h3>
+                            <p className="card-item-desc">
+                              {item.isLibrary ? "Document Library (Site Content)" : 
+                               (item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`)}
+                            </p>
+                          </div>
                         </div>
+                        
                         <div className="card-type-pill">
                           {getPillLabel(item)}
                         </div>
-                      </div>
 
-                      <h3 className="card-item-title" title={item.name}>{item.name}</h3>
-                      
-                      <p className="card-item-desc">
-                        {item.isLibrary ? "Document Library (Site Content)" : 
-                         (item.folder ? "Folder containing document assets." : `File asset. Size: ${formatFileSize(item.size)}`)}
-                      </p>
+                        <div className="card-meta-row">
+                          <span className="card-date-modified">
+                            {item.isLibrary ? "Site Content Level" : `Modified ${formatDate(item.lastModifiedDateTime)}`}
+                          </span>
+                        </div>
 
-                      <div className="card-meta-row">
-                        <span className="card-date-modified">
-                          {item.isLibrary ? "Site Content Level" : `Modified ${formatDate(item.lastModifiedDateTime)}`}
-                        </span>
+                        <div className="card-action-bar">
+                          <button 
+                            className="card-btn card-btn-secondary"
+                            onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                          >
+                            <Icon name="shield" size={15} />
+                            Manage Access
+                          </button>
+                        </div>
                       </div>
-
-                      <div className="card-action-bar">
-                        {item.isLibrary ? (
-                          <>
-                            <button 
-                              className="card-btn card-btn-primary"
-                              onClick={(e) => { e.stopPropagation(); handleLibraryClick(item); }}
-                            >
-                              <Icon name="folder" size={15} />
-                              Open Library
-                            </button>
-                            <button 
-                              className="card-btn card-btn-secondary"
-                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                            >
-                              <Icon name="shield" size={15} />
-                              Library Access
-                            </button>
-                          </>
-                        ) : (
-                          item.folder ? (
-                            <>
-                              <button 
-                                className="card-btn card-btn-primary"
-                                onClick={(e) => { e.stopPropagation(); handleFolderClick(item); }}
-                              >
-                                <Icon name="folder" size={15} />
-                                Open
-                              </button>
-                              <button 
-                                className="card-btn card-btn-secondary"
-                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                              >
-                                <Icon name="shield" size={15} />
-                                Access
-                              </button>
-                            </>
-                          ) : (
-                            <button 
-                              className="card-btn card-btn-primary full-width"
-                              onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                            >
-                              <Icon name="shield" size={15} />
-                              Manage Access
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+
+            <aside className="site-insights-panel" aria-label="Site access overview">
+              <div className="insights-card">
+                <div className="insights-card-header">
+                  <div className="insights-icon">
+                    <Icon name="shield" size={18} />
+                  </div>
+                  <div>
+                    <h2>Access Overview</h2>
+                    <p>{managementScope}</p>
+                  </div>
+                </div>
+
+                <div className="insights-metrics">
+                  <div>
+                    <strong>{navLevel === "site" ? libraryCount : folderCount}</strong>
+                    <span>{navLevel === "site" ? "Libraries" : "Folders"}</span>
+                  </div>
+                  <div>
+                    <strong>{fileCount}</strong>
+                    <span>Files</span>
+                  </div>
+                </div>
+
+                <div className="insights-note">
+                  <Icon name="users" size={16} />
+                  <span>Open Manage Access on any row to review the exact people and roles returned by SharePoint.</span>
+                </div>
+              </div>
+
+              <div className="insights-card compact">
+                <h3>Permission Scope</h3>
+                <ul className="scope-list">
+                  <li>
+                    <span>Site</span>
+                    <strong>{selectedSite.label}</strong>
+                  </li>
+                  <li>
+                    <span>Current view</span>
+                    <strong>{currentNode.name}</strong>
+                  </li>
+                  <li>
+                    <span>Managed action</span>
+                    <strong>Direct permissions</strong>
+                  </li>
+                </ul>
+              </div>
+            </aside>
+          </div>
         </>
       )}
     </div>

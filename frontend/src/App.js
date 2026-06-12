@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider, useMsal } from "@azure/msal-react";
-import { msalConfig, loginRequest } from "./authConfig";
+import { msalConfig, loginRequest, sharePointSites } from "./authConfig";
 import ItemsList from "./components/ItemsList";
 import Icon from "./components/Icon";
+import SitePicker from "./components/SitePicker";
 import "./App.css";
 
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -15,6 +16,7 @@ function MainApp() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedSite, setSelectedSite] = useState(null);
   const dropdownRef = useRef(null);
 
   // Auto-fetch profile once logged in
@@ -92,6 +94,12 @@ function MainApp() {
   };
 
   const isLoggedIn = accounts.length > 0;
+  const isSiteSelected = !!selectedSite;
+  const userInitial = userData && userData.displayName
+    ? userData.displayName.charAt(0).toUpperCase()
+    : (accounts[0]?.name ? accounts[0].name.charAt(0).toUpperCase() : "U");
+  const signedInName = userData ? userData.displayName : accounts[0]?.name || "User";
+  const signedInEmail = userData ? userData.mail || userData.userPrincipalName : accounts[0]?.username;
 
   return (
     <div className={`container ${isLoggedIn ? "full-layout" : ""}`}>
@@ -124,30 +132,59 @@ function MainApp() {
           </div>
         </div>
       ) : (
-        /* Large Portal Shell Container matching the mockup layout */
         <div className="portal-shell">
+          <aside className="portal-sidebar">
+            <div className="sidebar-brand">
+              <div className="sidebar-brand-mark">
+                <Icon name="layers" size={18} />
+              </div>
+              <div>
+                <h1>SharePoint</h1>
+                <p>Permission Manager</p>
+              </div>
+            </div>
+
+            <nav className="sidebar-nav" aria-label="Workspace navigation">
+              <button
+                className={`sidebar-nav-item ${!isSiteSelected ? "active" : ""}`}
+                onClick={() => setSelectedSite(null)}
+              >
+                <Icon name="home" size={18} />
+                Sites
+              </button>
+              <button
+                className={`sidebar-nav-item ${isSiteSelected ? "active" : ""}`}
+                disabled={!isSiteSelected}
+              >
+                <Icon name="library" size={18} />
+                Site contents
+              </button>
+            </nav>
+
+            <div className="sidebar-context">
+              <span className="sidebar-context-label">Current workspace</span>
+              <strong>{isSiteSelected ? selectedSite.label : "No site selected"}</strong>
+              <span>{isSiteSelected ? new URL(selectedSite.url).hostname : "Choose a SharePoint site to begin."}</span>
+            </div>
+          </aside>
           
-          {/* Main Top Header Navbar */}
           <header className="portal-navbar">
-            <div className="brand-section">
-              <Icon name="tool" className="brand-logo" size={14} />
-              <span>M365 Portal</span>
+            <div className="top-context">
+              <Icon name="shield" size={18} />
+              <span>{isSiteSelected ? `Permission scope: ${selectedSite.label}` : "Select a site to begin permission management"}</span>
             </div>
             
             <div className="nav-user-actions" ref={dropdownRef}>
               <span className="site-indicator">
                 <Icon name="globe" className="site-indicator-icon" size={13} />
-                Connected to SharePoint Site
+                {isSiteSelected ? `Connected to ${selectedSite.label}` : "Select a SharePoint Site"}
               </span>
-              
               <button 
                 className="avatar-btn" 
                 onClick={() => setShowDropdown(!showDropdown)}
                 title={userData ? userData.displayName : "Profile Info"}
               >
-                {userData && userData.displayName 
-                  ? userData.displayName.charAt(0).toUpperCase() 
-                  : (accounts[0].name ? accounts[0].name.charAt(0).toUpperCase() : "U")}
+                {userInitial}
               </button>
               
               {/* Profile details dropdown */}
@@ -155,10 +192,10 @@ function MainApp() {
                 <div className="profile-dropdown">
                   <div className="dropdown-user-info">
                     <p className="dropdown-user-name">
-                      {userData ? userData.displayName : accounts[0].name || "User"}
+                      {signedInName}
                     </p>
                     <p className="dropdown-user-email">
-                      {userData ? userData.mail || userData.userPrincipalName : accounts[0].username}
+                      {signedInEmail}
                     </p>
                   </div>
                   
@@ -191,9 +228,12 @@ function MainApp() {
             </div>
           </header>
 
-          {/* Main Items Listing Page Content */}
           <main className="portal-content">
-            <ItemsList instance={instance} accounts={accounts} />
+            {isSiteSelected ? (
+              <ItemsList instance={instance} accounts={accounts} selectedSite={selectedSite} />
+            ) : (
+              <SitePicker sites={sharePointSites} onSelect={setSelectedSite} />
+            )}
           </main>
           
         </div>

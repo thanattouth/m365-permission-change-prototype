@@ -2,6 +2,38 @@ const sharePointSiteUrl =
   process.env.REACT_APP_SHAREPOINT_SITE_URL ||
   "https://devm365th.sharepoint.com/sites/DocumentManagement";
 
+const parseSharePointSites = (rawSites, fallbackUrl) => {
+  const entries = rawSites
+    ? rawSites.split(",")
+    : [];
+
+  if (fallbackUrl) {
+    entries.unshift(`Primary Site|${fallbackUrl}`);
+  }
+
+  const seen = new Set();
+
+  return entries
+    .map((entry) => {
+      const [label, url] = entry.split("|").map((part) => part?.trim());
+      const siteUrl = url || label;
+      if (!siteUrl) return null;
+      const siteLabel = url ? label : siteUrl.split("/").filter(Boolean).pop();
+      return { label: siteLabel || siteUrl, url: siteUrl };
+    })
+    .filter((site) => {
+      if (!site || seen.has(site.url)) return false;
+      seen.add(site.url);
+      return true;
+    })
+    .filter(Boolean);
+};
+
+export const sharePointSites = parseSharePointSites(
+  process.env.REACT_APP_SHAREPOINT_SITES,
+  sharePointSiteUrl
+);
+
 const tenantId =
   process.env.REACT_APP_TENANT_ID ||
   "0f3101bc-add7-42aa-a041-4b5648c7bacf";

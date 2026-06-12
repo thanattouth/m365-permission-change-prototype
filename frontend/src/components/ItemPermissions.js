@@ -13,7 +13,7 @@ import Icon from "./Icon";
 // import FileClassification from "./FileClassification";
 import "./ItemPermissions.css";
 
-function ItemPermissions({ instance, item, onPermissionChanged, account }) {
+function ItemPermissions({ instance, item, onPermissionChanged, onClose, account, selectedSite }) {
   const [permissions, setPermissions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,14 +32,14 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsLoading(true);
     setError(null);
     try {
-      const perms = await getItemPermissions(instance, account, item.id, !!item.isLibrary, item.driveId);
+      const perms = await getItemPermissions(instance, account, item.id, !!item.isLibrary, item.driveId, selectedSite?.url);
       setPermissions(perms);
     } catch (err) {
       setError(err.message || "Failed to load permissions");
     } finally {
       setIsLoading(false);
     }
-  }, [instance, account, item.id, item.isLibrary, item.driveId]);
+  }, [instance, account, item.id, item.isLibrary, item.driveId, selectedSite]);
 
   useEffect(() => {
     loadPermissions();
@@ -84,6 +84,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
       itemName: item.name,
       isLibrary: !!item.isLibrary,
       driveId: item.driveId,
+      siteUrl: selectedSite?.url,
     });
     try {
       let itemServerRelativeUrl = null;
@@ -105,7 +106,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         itemServerRelativeUrl, 
         !!item.folder, 
         !!item.isLibrary,
-        item.driveId
+        item.driveId,
+        selectedSite?.url
       );
       console.info("Grant access completed", {
         userEmail,
@@ -129,7 +131,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     if (!window.confirm("Remove this permission?")) return;
 
     try {
-      await removeItemPermission(instance, account, item.id, permissionId, !!item.isLibrary, item.driveId);
+      await removeItemPermission(instance, account, item.id, permissionId, !!item.isLibrary, item.driveId, selectedSite?.url);
       await loadPermissions();
     } catch (err) {
       setError(err.message || "Failed to remove permission");
@@ -146,7 +148,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsUpdatingPermission(true);
     setError(null);
     try {
-      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole, !!item.isLibrary, item.driveId);
+      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole, !!item.isLibrary, item.driveId, selectedSite?.url);
       setEditingPermissionId(null);
       setEditingNewRole(null);
       await loadPermissions();
@@ -230,56 +232,77 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
 
   // Helper for External Email
   const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchInput);
+  const linkPermission = permissions.find((permission) => permission.link);
 
   return (
     <div className="permissions-container">
       <div className="permission-header">
-        <div className="permission-item-info">
-          <h2>{item.name}</h2>
-          <p className="item-type">
+        <div className="permission-title-row">
+          <div className="permission-item-icon">
             <Icon
               name={item.isLibrary ? "library" : (item.folder ? "folder" : "file")}
-              className="item-type-icon"
-              size={15}
+              size={26}
             />
-            {item.isLibrary ? "Library (Site Content)" : (item.folder ? "Folder" : "File")}
-          </p>
+          </div>
+          <div className="permission-item-info">
+            <h2>Manage Access</h2>
+            <p>{item.name}</p>
+          </div>
         </div>
+        <button className="permission-close-btn" onClick={onClose} aria-label="Close manage access">
+          x
+        </button>
       </div>
 
-      {error && (
-        <div className="error-message">
-          {error}
-          <button onClick={() => setError(null)} className="close-error">x</button>
+      <div className="permission-body">
+        {error && (
+          <div className="error-message">
+            {error}
+            <button onClick={() => setError(null)} className="close-error">x</button>
+          </div>
+        )}
+
+        {notice && (
+          <div className="info-message">
+            {notice}
+            <button onClick={() => setNotice(null)} className="close-info">x</button>
+          </div>
+        )}
+
+        <div className="link-settings-panel">
+          <div className="link-settings-icon">
+            <Icon name={linkPermission ? "link" : "lock"} size={18} />
+          </div>
+          <div>
+            <p>{linkPermission ? `${linkPermission.link.scope || "Sharing"} link is active` : "Direct access only"}</p>
+            <span>
+              {linkPermission
+                ? `${linkPermission.link.type || "Link"} permission detected from SharePoint`
+                : "No sharing link permission returned by Microsoft Graph"}
+            </span>
+          </div>
         </div>
-      )}
 
-      {notice && (
-        <div className="info-message">
-          {notice}
-          <button onClick={() => setNotice(null)} className="close-info">x</button>
-        </div>
-      )}
+        {/*
+        <FileClassification
+          instance={instance}
+          account={account}
+          item={item}
+          currentClassification={classification}
+          onClassificationChanged={(newId) => {
+            setClassification(newId);
+            loadPermissions();
+          }}
+        />
+        */}
 
-      {/*
-      <FileClassification
-        instance={instance}
-        account={account}
-        item={item}
-        currentClassification={classification}
-        onClassificationChanged={(newId) => {
-          setClassification(newId);
-          loadPermissions();
-        }}
-      />
-      */}
-
-      <div className="add-permission-section">
-        <h3>Grant Access</h3>
+        <div className="add-permission-section">
+        <h3>Add people, groups, or roles</h3>
         <div className="search-box">
+          <Icon name="personAdd" className="search-input-icon" size={18} />
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder="Name, email, or group"
             value={searchInput}
             onChange={handleSearchUsers}
             disabled={isAddingPermission}
@@ -349,11 +372,11 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         )}
       </div>
 
-      <div className="current-permissions-section">
+        <div className="current-permissions-section">
         <div className="section-heading-row">
           <div>
-            <h3>Current Access</h3>
-            <p className="section-kicker">Active sharing entries</p>
+            <h3>People with access</h3>
+            <p className="section-kicker">Direct permissions returned by SharePoint</p>
           </div>
           {!isLoading && (
             <span className="access-count">
@@ -434,6 +457,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
           </div>
         )}
       </div>
+      </div>
+
     </div>
   );
 }
