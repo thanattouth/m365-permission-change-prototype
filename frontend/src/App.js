@@ -82,10 +82,13 @@ function MainApp() {
   };
 
   const handleLogout = async () => {
-    await instance.logoutPopup();
     setUserData(null);
     setError(null);
     setShowDropdown(false);
+    await instance.logoutRedirect({
+      account: accounts[0],
+      postLogoutRedirectUri: window.location.origin,
+    });
   };
 
   const isLoggedIn = accounts.length > 0;
