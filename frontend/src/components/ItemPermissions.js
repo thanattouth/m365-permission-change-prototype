@@ -163,6 +163,53 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     return roleMap[role] || "view";
   };
 
+  const getPermissionPrincipal = (permission) => {
+    const user = permission.grantedTo?.user || permission.grantedToV2?.user;
+    if (user) {
+      return {
+        type: "user",
+        name: user.displayName || user.email || user.userPrincipalName || "User",
+        email: user.email || user.userPrincipalName || permission.grantedToV2?.siteUser?.loginName || "User",
+        avatar: user.displayName?.charAt(0).toUpperCase() || "U",
+      };
+    }
+
+    const group = permission.grantedTo?.group || permission.grantedToV2?.group;
+    if (group) {
+      return {
+        type: "group",
+        name: group.displayName || "Group",
+        email: "Group",
+        avatar: "G",
+      };
+    }
+
+    if (permission.invitation?.email) {
+      return {
+        type: "invitation",
+        name: permission.invitation.email,
+        email: "Invitation pending",
+        avatar: "E",
+      };
+    }
+
+    if (permission.link) {
+      return {
+        type: "link",
+        name: permission.link.type ? `${permission.link.type} link` : "Sharing link",
+        email: permission.link.scope || "Link access",
+        avatar: "L",
+      };
+    }
+
+    return {
+      type: "unknown",
+      name: "Unknown",
+      email: "Permission details unavailable",
+      avatar: "?",
+    };
+  };
+
   // Helper for External Email
   const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchInput);
 
@@ -295,30 +342,18 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
           <p className="no-permissions">No direct permissions set</p>
         ) : (
           <div className="permissions-list">
-            {permissions.map((perm) => (
+            {permissions.map((perm) => {
+              const principal = getPermissionPrincipal(perm);
+              return (
               <div key={perm.id} className="permission-item">
                 <div className="permission-user">
-                  {perm.grantedTo?.user ? (
-                    <>
-                      <div className={`user-avatar ${getRoleClass(perm.roles)}`}>
-                        {perm.grantedTo.user.displayName?.charAt(0).toUpperCase() || "U"}
-                      </div>
-                      <div className="user-details">
-                        <p className="user-name">{perm.grantedTo.user.displayName}</p>
-                        <p className="user-email">{perm.grantedTo.user.email}</p>
-                      </div>
-                    </>
-                  ) : perm.grantedTo?.group ? (
-                    <>
-                      <div className={`user-avatar group ${getRoleClass(perm.roles)}`}>G</div>
-                      <div className="user-details">
-                        <p className="user-name">{perm.grantedTo.group.displayName}</p>
-                        <p className="user-email">Group</p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="user-details"><p className="user-name">Unknown</p></div>
-                  )}
+                  <div className={`user-avatar ${principal.type === "group" ? "group" : ""} ${getRoleClass(perm.roles)}`}>
+                    {principal.avatar}
+                  </div>
+                  <div className="user-details">
+                    <p className="user-name">{principal.name}</p>
+                    <p className="user-email">{principal.email}</p>
+                  </div>
                 </div>
                 {editingPermissionId === perm.id ? (
                   <div className="permission-actions edit-mode">
@@ -369,7 +404,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

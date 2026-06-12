@@ -1,5 +1,24 @@
 import { sharePointConfig } from "../authConfig";
 
+const readResponseBody = async (response) => {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
+const getGraphErrorMessage = (fallback, response, body) => {
+  const graphError = body?.error;
+  const message = graphError?.message || body?.message || (typeof body === "string" ? body : null);
+  const code = graphError?.code || body?.code;
+  return [fallback, `${response.status} ${response.statusText}`.trim(), code, message]
+    .filter(Boolean)
+    .join(": ");
+};
+
 /**
  * Get access token for Microsoft Graph API calls
  */
@@ -179,9 +198,10 @@ export const getItemPermissions = async (instance, account, itemId, isLibrary = 
     const token = await getAccessToken(instance, account);
     
     // Different endpoint for Library (List) vs Item (File/Folder)
+    const permissionSelect = "id,grantedTo,grantedToV2,grantedToIdentitiesV2,invitation,link,roles,inheritedFrom";
     const endpoint = isLibrary
-      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions?$select=id,grantedTo,roles`
-      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=id,grantedTo,roles`;
+      ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions?$select=${permissionSelect}`
+      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=${permissionSelect}`;
 
     const response = await fetch(
       endpoint,
@@ -191,7 +211,8 @@ export const getItemPermissions = async (instance, account, itemId, isLibrary = 
     );
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch permissions: ${response.status}`);
+      const errorBody = await readResponseBody(response);
+      throw new Error(getGraphErrorMessage("Failed to fetch permissions", response, errorBody));
     }
     
     const data = await response.json();
@@ -444,11 +465,19 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
       }
     );
     
+    const data = await readResponseBody(response);
+
     if (!response.ok) {
-      throw new Error(`Failed to add permission: ${response.status}`);
+      throw new Error(getGraphErrorMessage("Failed to add permission", response, data));
     }
-    
-    const data = await response.json();
+
+    if (response.status === 207) {
+      const failed = data?.value?.find((result) => result?.error);
+      if (failed?.error) {
+        throw new Error(`Permission partially added: ${failed.error.code || "unknown"}: ${failed.error.message || "Invitation notification failed"}`);
+      }
+    }
+
     return data;
   } catch (error) {
     console.error("Error adding permission:", error);
