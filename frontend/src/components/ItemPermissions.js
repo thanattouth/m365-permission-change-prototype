@@ -17,6 +17,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
   const [permissions, setPermissions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -75,6 +76,14 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     const role = getUserRole(userId);
     setAddingPermissionUserId(userId);
     setError(null);
+    setNotice(null);
+    console.info("Grant access clicked", {
+      userEmail,
+      role,
+      itemId: item.id,
+      itemName: item.name,
+      isLibrary: !!item.isLibrary,
+    });
     try {
       let itemServerRelativeUrl = null;
       if (item.webUrl) {
@@ -86,7 +95,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         }
       }
 
-      await addItemPermission(
+      const result = await addItemPermission(
         instance, 
         account, 
         item.id, 
@@ -96,11 +105,18 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         !!item.folder, 
         !!item.isLibrary
       );
+      console.info("Grant access completed", {
+        userEmail,
+        role,
+        result,
+      });
       setSearchInput("");
       setUserSearchResults([]);
       setUserRoleMap({});
       await loadPermissions();
+      setNotice(`Access request completed for ${userEmail}. If this is an external user, the invitation may appear after redemption or be blocked by tenant mail flow policy.`);
     } catch (err) {
+      console.error("Grant access failed", err);
       setError(err.message || "Failed to add permission");
     } finally {
       setAddingPermissionUserId(null);
@@ -233,6 +249,13 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         <div className="error-message">
           {error}
           <button onClick={() => setError(null)} className="close-error">x</button>
+        </div>
+      )}
+
+      {notice && (
+        <div className="info-message">
+          {notice}
+          <button onClick={() => setNotice(null)} className="close-info">x</button>
         </div>
       )}
 

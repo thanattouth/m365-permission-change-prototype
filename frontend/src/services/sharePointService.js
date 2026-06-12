@@ -447,6 +447,13 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
       ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/invite`
       : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`;
 
+    console.info("Grant access request", {
+      endpoint,
+      userEmail,
+      role: mapRoleToGraphRole(role),
+      target: isLibrary ? "library" : "item",
+    });
+
     const response = await fetch(
       endpoint,
       {
@@ -466,6 +473,12 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
     );
     
     const data = await readResponseBody(response);
+
+    console.info("Grant access response", {
+      status: response.status,
+      ok: response.ok,
+      body: data,
+    });
 
     if (!response.ok) {
       throw new Error(getGraphErrorMessage("Failed to add permission", response, data));

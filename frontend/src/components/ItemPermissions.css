@@ -49,6 +49,33 @@
   flex-shrink: 0;
 }
 
+.info-message {
+  background: rgba(0, 102, 204, 0.08);
+  border: 1px solid rgba(0, 102, 204, 0.16);
+  color: var(--accent-primary);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.close-info {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+
 /* ============================================
    Glass Layout Sections
    ============================================ */
