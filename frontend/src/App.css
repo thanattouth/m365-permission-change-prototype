@@ -264,6 +264,7 @@
   font-weight: 400;
   color: var(--text-secondary);
   padding: 6px 14px;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -272,13 +273,16 @@
 
 .tab-link:hover {
   background: var(--surface-pearl);
+  border-color: var(--hairline);
   color: var(--accent-primary);
 }
 
 .tab-link.active {
-  background: var(--accent-primary);
-  color: var(--text-on-dark);
+  background: rgba(0, 102, 204, 0.1);
+  border-color: rgba(0, 102, 204, 0.22);
+  color: var(--accent-primary);
   box-shadow: none;
+  font-weight: 600;
 }
 
 .subbar-actions {
