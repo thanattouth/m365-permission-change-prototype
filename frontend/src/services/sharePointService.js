@@ -192,7 +192,7 @@ export const getDriveItems = async (instance, account, driveId, folderId = "root
 /**
  * Get permissions of a specific item
  */
-export const getItemPermissions = async (instance, account, itemId, isLibrary = false) => {
+export const getItemPermissions = async (instance, account, itemId, isLibrary = false, driveId = null) => {
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
@@ -201,7 +201,9 @@ export const getItemPermissions = async (instance, account, itemId, isLibrary = 
     const permissionSelect = "id,grantedTo,grantedToV2,grantedToIdentitiesV2,invitation,link,roles,inheritedFrom";
     const endpoint = isLibrary
       ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions?$select=${permissionSelect}`
-      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=${permissionSelect}`;
+      : driveId
+        ? `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/permissions?$select=${permissionSelect}`
+        : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions?$select=${permissionSelect}`;
 
     const response = await fetch(
       endpoint,
@@ -425,7 +427,7 @@ export const addContributePermissionViaRestApi = async (instance, account, itemS
  * @param {string|null} itemServerRelativeUrl - Server-relative URL (for SharePoint REST, used for Contribute)
  * @param {boolean} isFolder - true if item is a folder (affects SharePoint REST endpoint)
  */
-export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false, isLibrary = false) => {
+export const addItemPermission = async (instance, account, itemId, userEmail, role = "read", itemServerRelativeUrl = null, isFolder = false, isLibrary = false, driveId = null) => {
   // 'contribute' uses SharePoint REST API (Graph API does not support it)
   if (role === "contribute") {
     if (isLibrary) {
@@ -445,13 +447,16 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
     // Different invite endpoint for Library vs Item
     const endpoint = isLibrary
       ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/invite`
-      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`;
+      : driveId
+        ? `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/invite`
+        : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/invite`;
 
     console.info("Grant access request", {
       endpoint,
       userEmail,
       role: mapRoleToGraphRole(role),
       target: isLibrary ? "library" : "item",
+      driveId,
     });
 
     const response = await fetch(
@@ -503,14 +508,16 @@ export const addItemPermission = async (instance, account, itemId, userEmail, ro
  * @param {string} itemId - Item ID
  * @param {string} permissionId - Permission ID
  */
-export const removeItemPermission = async (instance, account, itemId, permissionId, isLibrary = false) => {
+export const removeItemPermission = async (instance, account, itemId, permissionId, isLibrary = false, driveId = null) => {
   try {
     const siteId = await getSiteId(instance, account);
     const token = await getAccessToken(instance, account);
     
     const endpoint = isLibrary
       ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions/${permissionId}`
-      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
+      : driveId
+        ? `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/permissions/${permissionId}`
+        : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
 
     const response = await fetch(
       endpoint,
@@ -536,7 +543,7 @@ export const removeItemPermission = async (instance, account, itemId, permission
  * NOTE: Graph API only supports 'read' and 'write' for PATCH.
  * 'contribute' update path is not yet supported (would need remove + re-add via REST API).
  */
-export const updateItemPermission = async (instance, account, itemId, permissionId, newRole, isLibrary = false) => {
+export const updateItemPermission = async (instance, account, itemId, permissionId, newRole, isLibrary = false, driveId = null) => {
   if (newRole === "contribute") {
     throw new Error("Updating to Restrict Editor is not supported.");
   }
@@ -546,7 +553,9 @@ export const updateItemPermission = async (instance, account, itemId, permission
     
     const endpoint = isLibrary
       ? `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${itemId}/drive/root/permissions/${permissionId}`
-      : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
+      : driveId
+        ? `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/permissions/${permissionId}`
+        : `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${itemId}/permissions/${permissionId}`;
 
     // Standard Graph API PATCH
     const response = await fetch(

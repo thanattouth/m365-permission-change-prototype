@@ -34,7 +34,10 @@ function ItemsList({ instance, accounts }) {
         })));
       } else {
         const driveItems = await getDriveItems(instance, accounts[0], currentDriveId, currentFolderId);
-        setItems(driveItems);
+        setItems(driveItems.map((item) => ({
+          ...item,
+          driveId: currentDriveId,
+        })));
       }
     } catch (err) {
       setError(err.message || "Failed to load items");

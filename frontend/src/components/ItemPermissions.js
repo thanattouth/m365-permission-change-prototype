@@ -32,14 +32,14 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsLoading(true);
     setError(null);
     try {
-      const perms = await getItemPermissions(instance, account, item.id, !!item.isLibrary);
+      const perms = await getItemPermissions(instance, account, item.id, !!item.isLibrary, item.driveId);
       setPermissions(perms);
     } catch (err) {
       setError(err.message || "Failed to load permissions");
     } finally {
       setIsLoading(false);
     }
-  }, [instance, account, item.id, item.isLibrary]);
+  }, [instance, account, item.id, item.isLibrary, item.driveId]);
 
   useEffect(() => {
     loadPermissions();
@@ -83,6 +83,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
       itemId: item.id,
       itemName: item.name,
       isLibrary: !!item.isLibrary,
+      driveId: item.driveId,
     });
     try {
       let itemServerRelativeUrl = null;
@@ -103,7 +104,8 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
         role, 
         itemServerRelativeUrl, 
         !!item.folder, 
-        !!item.isLibrary
+        !!item.isLibrary,
+        item.driveId
       );
       console.info("Grant access completed", {
         userEmail,
@@ -127,7 +129,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     if (!window.confirm("Remove this permission?")) return;
 
     try {
-      await removeItemPermission(instance, account, item.id, permissionId, !!item.isLibrary);
+      await removeItemPermission(instance, account, item.id, permissionId, !!item.isLibrary, item.driveId);
       await loadPermissions();
     } catch (err) {
       setError(err.message || "Failed to remove permission");
@@ -144,7 +146,7 @@ function ItemPermissions({ instance, item, onPermissionChanged, account }) {
     setIsUpdatingPermission(true);
     setError(null);
     try {
-      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole, !!item.isLibrary);
+      await updateItemPermission(instance, account, item.id, permissionId, editingNewRole, !!item.isLibrary, item.driveId);
       setEditingPermissionId(null);
       setEditingNewRole(null);
       await loadPermissions();
