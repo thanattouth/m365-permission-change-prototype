@@ -1,33 +1,55 @@
+const sharePointSiteUrl =
+  process.env.REACT_APP_SHAREPOINT_SITE_URL ||
+  "https://devm365th.sharepoint.com/sites/DocumentManagement";
+
+const tenantId =
+  process.env.REACT_APP_TENANT_ID ||
+  "0f3101bc-add7-42aa-a041-4b5648c7bacf";
+
+const clientId =
+  process.env.REACT_APP_CLIENT_ID ||
+  "5e597123-d103-4c16-a7f3-cb99da285561";
+
+const redirectUri =
+  process.env.REACT_APP_REDIRECT_URI ||
+  window.location.origin;
+
+const sharePointHostname = new URL(sharePointSiteUrl).hostname;
+const sharePointRestScope =
+  process.env.REACT_APP_SHAREPOINT_REST_SCOPE ||
+  `https://${sharePointHostname}/AllSites.FullControl`;
+
+const graphScopes = [
+  "User.Read",
+  "Sites.ReadWrite.All",
+  "Files.ReadWrite.All",
+  "Directory.ReadWrite.All",
+];
+
 // SharePoint Site Configuration
 export const sharePointConfig = {
-  siteUrl: "https://devm365th.sharepoint.com/sites/DocumentManagement",
-  // Example: "https://tenant.sharepoint.com/sites/yoursitename"
+  siteUrl: sharePointSiteUrl,
 };
 
 export const msalConfig = {
   auth: {
-    clientId: "5e597123-d103-4c16-a7f3-cb99da285561",
-    authority: "https://login.microsoftonline.com/0f3101bc-add7-42aa-a041-4b5648c7bacf",
-    redirectUri: window.location.origin
+    clientId,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
+    redirectUri,
   }
 };
 
 export const loginRequest = {
   scopes: [
-    "User.Read",
-    "Sites.ReadWrite.All",      // Read/Write SharePoint sites and content
-    "Files.ReadWrite.All",       // Read/Write files in SharePoint
-    "Directory.ReadWrite.All",   // Manage users/groups for permissions
-    "https://devm365th.sharepoint.com/AllSites.FullControl" // SharePoint REST API (for Contribute role)
+    ...graphScopes,
+    sharePointRestScope,
   ]
 };
 
 // For getting access token with specific scopes
 export const tokenRequest = {
   scopes: [
-    "Sites.ReadWrite.All",
-    "Files.ReadWrite.All",
-    "Directory.ReadWrite.All",
-    "https://devm365th.sharepoint.com/AllSites.FullControl" // SharePoint REST API (for Contribute role)
+    ...graphScopes.filter((scope) => scope !== "User.Read"),
+    sharePointRestScope,
   ]
 };
